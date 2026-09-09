@@ -8,30 +8,26 @@ use Carbon\Carbon;
 
 class AsistenciaController extends Controller
 {
-    // Límites de jornada laboral
-    private const HORA_APERTURA_REGISTRO = '11:30:00'; // Antes de esto no se puede registrar entrada
-    private const HORA_FIN_JORNADA       = '18:00:00'; // A partir de aquí, el tiempo cuenta como hora extra
-    private const HORA_CORTE_EXTRAS      = '23:59:59'; // Corte de horas extra (medianoche)
+    // Ventanas de tiempo estrictas
+    private const HORA_ENTRADA_INICIO = '09:00:00';
+    private const HORA_ENTRADA_FIN    = '09:30:00';
+    private const HORA_SALIDA_INICIO  = '17:30:00';
+    private const HORA_SALIDA_FIN     = '18:00:00';
+    private const HORA_CORTE_AUTO     = '18:01:00';
 
     public function registrarEntrada()
     {
         if (!Auth::check()) return redirect('/login');
 
-        $horaActual     = now();
-        $aperturaHoy    = Carbon::today()->setTimeFromTimeString(self::HORA_APERTURA_REGISTRO);
+        $horaActual    = now();
+        $inicioEntrada = Carbon::today()->setTimeFromTimeString(self::HORA_ENTRADA_INICIO);
+        $finEntrada    = Carbon::today()->setTimeFromTimeString(self::HORA_ENTRADA_FIN);
 
-
-dd([
-    'hora_actual' => $horaActual->format('H:i:s'),
-    'apertura_hoy' => $aperturaHoy->format('H:i:s'),
-    'comparacion_lt' => $horaActual->lt($aperturaHoy), // true = debería bloquear
-]);
-
-        // Restricción: no se puede registrar entrada antes de las 8:30 a.m.
-        if ($horaActual->lt($aperturaHoy)) {
+        // Restricción estricta: Solo entre 9:00 am y 9:30 am
+        if ($horaActual->lt($inicioEntrada) || $horaActual->gt($finEntrada)) {
             return back()->with(
                 'error',
-                'Aún no puedes registrar tu entrada. El registro de asistencia se habilita a partir de las 8:30 a.m.'
+                'El registro de entrada solo está permitido estrictamente entre las 9:00 a.m. y las 9:30 a.m.'
             );
         }
 
@@ -60,52 +56,54 @@ dd([
     {
         if (!Auth::check()) return redirect('/login');
 
-        // Buscamos el registro abierto más reciente del usuario,
-        // sin limitarnos a "hoy": si la jornada cruzó la medianoche,
-        // el registro sigue teniendo la fecha de ayer.
+        $horaActual      = now();
+        $inicioSalida    = Carbon::today()->setTimeFromTimeString(self::HORA_SALIDA_INICIO);
+        $finSalida       = Carbon::today()->setTimeFromTimeString(self::HORA_SALIDA_FIN);
+        $corteAutomatico = Carbon::today()->setTimeFromTimeString(self::HORA_CORTE_AUTO);
+
+        // 1. Corte automático: Si son las 6:01 p.m. o más tarde, se cierra automáticamente
+        if ($horaActual->gte($corteAutomatico)) {
+            $actualizados = Asistencia::where('user_id', Auth::id())
+                ->whereNull('hora_salida')
+                ->update(['hora_salida' => self::HORA_SALIDA_FIN]);
+
+            if ($actualizados > 0) {
+                return back()->with(
+                    'warning',
+                    'Ha pasado el límite de las 6:01 p.m. Tu turno ha sido cerrado automáticamente a las 18:00 hrs.'
+                );
+            }
+        }
+
+        // 2. Restricción: No se permite registrar salida antes de las 5:30 p.m.
+        if ($horaActual->lt($inicioSalida)) {
+            return back()->with(
+                'error',
+                'Aún no es hora de salida. El horario permitido para registrar salida es de 5:30 p.m. a 6:00 p.m.'
+            );
+        }
+
+        // Buscamos el registro activo del usuario para el día de hoy
         $asistencia = Asistencia::where('user_id', Auth::id())
             ->whereNull('hora_salida')
-            ->orderByDesc('fecha')
+            ->where('fecha', now()->toDateString())
             ->first();
 
         if (!$asistencia) {
             return back()->with(
                 'error',
-                'No se encontró un registro de entrada activo para poder registrar tu salida.'
+                'No se encontró un registro de entrada activo para el día de hoy.'
             );
         }
 
-        $hoy = now()->toDateString();
+        // 3. Si intenta registrar entre las 6:00 p.m. y las 6:01 p.m., se topa exactamente a las 18:00:00
+        $horaSalida = $horaActual->gt($finSalida) 
+            ? self::HORA_SALIDA_FIN 
+            : $horaActual->format('H:i:s');
 
-        // Corte de horas extra: si el registro pertenece a un día anterior,
-        // la jornada ya fue cerrada automáticamente a las 00:00 y no se
-        // permite marcar la salida "en vivo" (rompería el cálculo de tiempos).
-        if ($asistencia->fecha !== $hoy) {
-            $asistencia->update([
-                'hora_salida' => self::HORA_CORTE_EXTRAS,
-            ]);
-
-            return back()->with(
-                'warning',
-                'Término de labores: tu jornada del ' .
-                    Carbon::parse($asistencia->fecha)->format('d/m/Y') .
-                    ' fue cerrada automáticamente por el corte de horas extra (00:00 hrs). ' .
-                    'Si detectas alguna inconsistencia, repórtalo con tu administrador.'
-            );
-        }
-
-        $horaActual  = now();
-        $finJornada  = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
-
-        $asistencia->update(['hora_salida' => $horaActual->format('H:i:s')]);
-
-        // Mensaje distinto si la salida ocurre después del horario laboral (6:00 p.m.)
-        if ($horaActual->gt($finJornada)) {
-            return back()->with(
-                'success',
-                'Salida registrada correctamente. A partir de las 6:00 p.m. el tiempo se contabiliza como horas extra.'
-            );
-        }
+        $asistencia->update([
+            'hora_salida' => $horaSalida
+        ]);
 
         return back()->with('success', 'Salida registrada correctamente.');
     }
