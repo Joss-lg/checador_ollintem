@@ -32,7 +32,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <div class="flex flex-col gap-3.5">
 
     
-    <form action="<?php echo e(route('becario.checar')); ?>" method="POST" class="m-0">
+    <form action="<?php echo e(route('entrada')); ?>" method="POST" class="m-0">
         <?php echo csrf_field(); ?>
         <?php if (isset($component)) { $__componentOriginal7935060871e8e33293f522286b943df3 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal7935060871e8e33293f522286b943df3 = $attributes; } ?>
@@ -101,7 +101,7 @@ unset($__defined_vars, $__key, $__value); ?>
     </div>
 
     
-    <form id="formFinalizarPausa" action="<?php echo e(route('becario.finalizarPausa')); ?>" method="POST" class="m-0">
+    <form id="formFinalizarPausa" action="<?php echo e(route('pausa.finalizar')); ?>" method="POST" class="m-0">
         <?php echo csrf_field(); ?>
         <?php if (isset($component)) { $__componentOriginal7935060871e8e33293f522286b943df3 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal7935060871e8e33293f522286b943df3 = $attributes; } ?>
@@ -126,7 +126,7 @@ unset($__defined_vars, $__key, $__value); ?>
     </form>
 
     
-    <form id="formSalida" action="<?php echo e(route('becario.salida')); ?>" method="POST" class="m-0">
+    <form id="formSalida" action="<?php echo e(route('salida')); ?>" method="POST" class="m-0">
         <?php echo csrf_field(); ?>
         <?php if (isset($component)) { $__componentOriginal7935060871e8e33293f522286b943df3 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal7935060871e8e33293f522286b943df3 = $attributes; } ?>

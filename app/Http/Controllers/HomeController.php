@@ -7,9 +7,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
 
 class HomeController extends Controller
 {
+    /**
+     * CAPA DE SEGURIDAD: Validación interna para evitar acceso de no administradores.
+     */
     private function authorizeAdmin()
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') {
@@ -19,7 +23,7 @@ class HomeController extends Controller
 
     public function index()
     {
-        // Accesible para todos los usuarios logueados
+        // Listado general de usuarios para la vista de administración
         $usuarios = User::all();
         return view('home', compact('usuarios'));
     }
@@ -28,14 +32,21 @@ class HomeController extends Controller
     {
         $this->authorizeAdmin();
 
-        $request->validate(['name' => 'required', 'email' => 'required|email|unique:users', 'password' => 'required|min:6']);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'role' => 'required|in:admin,becario',
+        ]);
+
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
-        return back()->with('success', 'Usuario creado.');
+
+        return back()->with('success', 'Usuario creado correctamente.');
     }
 
     public function deleteUser($id)
@@ -47,7 +58,7 @@ class HomeController extends Controller
         }
 
         User::findOrFail($id)->delete();
-        return back()->with('success', 'Usuario eliminado.');
+        return back()->with('success', 'Usuario eliminado correctamente.');
     }
 
     public function toggleAdmin($id)
@@ -57,12 +68,20 @@ class HomeController extends Controller
         $user = User::findOrFail($id);
         $user->role = ($user->role === 'admin') ? 'becario' : 'admin';
         $user->save();
-        return back()->with('success', 'Permisos actualizados.');
+
+        return back()->with('success', 'Permisos actualizados con éxito.');
     }
 
     public function update(Request $request, $id)
     {
         $this->authorizeAdmin();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'role' => 'required|in:admin,becario',
+            'password' => ['nullable', 'confirmed', Password::defaults()],
+        ]);
 
         return DB::transaction(function () use ($request, $id) {
             $user = User::findOrFail($id);

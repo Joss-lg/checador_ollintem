@@ -1,8 +1,5 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
-import './dashboard-clock';
-import './dashboard-timers';
-import './dashboard';
 import './rol-watcher.js';
 import { initTheme, toggleTheme } from './theme-switcher';
 

@@ -11,44 +11,26 @@ class ReporteController extends Controller
 {
     protected ReporteService $reporteService;
 
-public function __construct(ReporteService $reporteService)
-{
-    $this->reporteService = $reporteService;
-}
+    public function __construct(ReporteService $reporteService)
+    {
+        $this->reporteService = $reporteService;
+    }
 
-   public function show(User $user)
-{
-    /*
-    |--------------------------------------------------------------------------
-    | Obtener asistencias del becario
-    |--------------------------------------------------------------------------
-    */
+    public function show(User $user)
+    {
+        // Obtener asistencias del becario a través del servicio de reportes
+        $asistencias = $this->reporteService->obtenerReporteBecario($user);
 
-    $asistencias = $this->reporteService
-        ->obtenerReporteBecario($user);
+        // Obtener el resumen general de la jornada y pausas
+        $resumen = $this->reporteService->obtenerResumen($asistencias);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Obtener resumen
-    |--------------------------------------------------------------------------
-    */
-
-    $resumen = $this->reporteService
-        ->obtenerResumen($asistencias);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Vista
-    |--------------------------------------------------------------------------
-    */
-
-    return view(
-        'admin.historial.reporte',
-        [
-            'user' => $user,
-            'asistencias' => $asistencias,
-            'resumen' => $resumen,
-        ]
-    );
-}
+        return view(
+            'admin.historial.reporte',
+            [
+                'user'        => $user,
+                'asistencias' => $asistencias,
+                'resumen'     => $resumen,
+            ]
+        );
+    }
 }

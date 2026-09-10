@@ -60,20 +60,6 @@
     </td>
 
     
-    <td class="hidden md:table-cell px-4 py-3">
-        <?php if($asistencia->tiempoHorasExtras() > 0): ?>
-            <span class="text-emerald-700 dark:text-emerald-400 font-bold">
-                <?php echo e($asistencia->horasExtrasTotalFormato()); ?>
-
-            </span>
-        <?php else: ?>
-            <span class="text-gray-400 dark:text-gray-600">
-                00:00:00
-            </span>
-        <?php endif; ?>
-    </td>
-
-    
     <td class="px-4 py-3">
         <a href="<?php echo e(route('admin.historial.reporte', $asistencia->user->id)); ?>"
            class="inline-flex items-center gap-1 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg px-3 py-1.5 text-sm transition-colors no-underline">

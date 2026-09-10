@@ -51,19 +51,6 @@
         {{ $asistencia->formatoTiempo($asistencia->tiempoTrabajado()) }}
     </td>
 
-    {{-- Horas extra --}}
-    <td class="hidden md:table-cell px-4 py-3">
-        @if($asistencia->tiempoHorasExtras() > 0)
-            <span class="text-emerald-700 dark:text-emerald-400 font-bold">
-                {{ $asistencia->horasExtrasTotalFormato() }}
-            </span>
-        @else
-            <span class="text-gray-400 dark:text-gray-600">
-                00:00:00
-            </span>
-        @endif
-    </td>
-
     {{-- Acción --}}
     <td class="px-4 py-3">
         <a href="{{ route('admin.historial.reporte', $asistencia->user->id) }}"

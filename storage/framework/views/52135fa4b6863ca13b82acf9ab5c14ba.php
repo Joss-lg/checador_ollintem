@@ -29,7 +29,7 @@ foreach ($attributes->all() as $__key => $__value) {
 unset($__defined_vars, $__key, $__value); ?>
 
 <div id="pausaMenu" class="max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-out">
-    <form action="<?php echo e(route('becario.iniciarPausa')); ?>" method="POST"
+    <form action="<?php echo e(route('pausa.iniciar')); ?>" method="POST"
           class="bg-white dark:bg-slate-800/50 border border-amber-500/30 rounded-2xl p-3 mt-2 transition-colors duration-300">
         <?php echo csrf_field(); ?>
         <label class="block text-sm text-amber-600 dark:text-amber-400 font-bold uppercase mb-2 text-[0.7rem]">

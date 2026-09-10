@@ -9,7 +9,7 @@
 
 
     <style>
-        @include('admin.reportes.pdf.partials.styles')
+        <?php echo $__env->make('admin.reportes.pdf.partials.styles', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     </style>
 
 </head>
@@ -49,7 +49,8 @@
             </div>
 
             <div class="summary-value">
-                {{ $resumen['jornadas'] }}
+                <?php echo e($resumen['jornadas']); ?>
+
             </div>
 
         </td>
@@ -62,7 +63,8 @@
             </div>
 
             <div class="summary-value">
-                {{ $resumen['horas_trabajadas'] }}
+                <?php echo e($resumen['horas_trabajadas']); ?>
+
             </div>
 
         </td>
@@ -75,7 +77,8 @@
             </div>
 
             <div class="summary-value">
-                {{ $resumen['tiempo_pausa'] }}
+                <?php echo e($resumen['tiempo_pausa']); ?>
+
             </div>
 
         </td>
@@ -88,7 +91,8 @@
             </div>
 
             <div class="summary-value">
-                {{ $resumen['horas_extra'] }}
+                <?php echo e($resumen['horas_extra']); ?>
+
             </div>
 
         </td>
@@ -160,7 +164,7 @@
 <tbody>
 
 
-@foreach($asistencias as $asistencia)
+<?php $__currentLoopData = $asistencias; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $asistencia): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 
 
 <tr>
@@ -168,53 +172,58 @@
 
 <td>
 
-{{ $asistencia->user->name }}
+<?php echo e($asistencia->user->name); ?>
+
 
 </td>
 
 
 <td>
 
-{{ $asistencia->fecha }}
+<?php echo e($asistencia->fecha); ?>
+
 
 </td>
 
 
 <td>
 
-{{ $asistencia->hora_entrada ?? '--' }}
+<?php echo e($asistencia->hora_entrada ?? '--'); ?>
+
 
 </td>
 
 
 <td>
 
-{{ $asistencia->hora_salida ?? '--' }}
+<?php echo e($asistencia->hora_salida ?? '--'); ?>
+
 
 </td>
 
 
 <td>
 
-{{ $asistencia->tiempoPausas() }}
+<?php echo e($asistencia->tiempoPausas()); ?>
+
 
 </td>
 
 
 <td>
 
-{{ 
-    $asistencia->formatoTiempo(
+<?php echo e($asistencia->formatoTiempo(
         $asistencia->tiempoTrabajado()
-    )
-}}
+    )); ?>
+
 
 </td>
 
 
 <td>
 
-{{ $asistencia->horasExtrasTotalFormato() }}
+<?php echo e($asistencia->horasExtrasTotalFormato()); ?>
+
 
 </td>
 
@@ -223,7 +232,7 @@
 </tr>
 
 
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
 
 </tbody>
@@ -238,7 +247,8 @@
 
     OllinCheck |
     Generado:
-    {{ now()->format('d/m/Y H:i') }}
+    <?php echo e(now()->format('d/m/Y H:i')); ?>
+
 
 </div>
 
@@ -246,4 +256,4 @@
 
 </body>
 
-</html>
+</html><?php /**PATH C:\Users\tortu\Checador-Online\resources\views/admin/reportes/pdf/general.blade.php ENDPATH**/ ?>

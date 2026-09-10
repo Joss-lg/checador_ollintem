@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\BecarioController;
+use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\HistorialController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Reportes\ExcelController;
@@ -60,11 +60,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 
 Route::middleware(['auth', 'role:becario'])->group(function () {
-    Route::get('/becario/dashboard', [BecarioController::class, 'index'])->name('becario.dashboard');
-    Route::post('/entrada', [BecarioController::class, 'registrarEntrada'])->name('becario.checar');
-    Route::post('/salida', [BecarioController::class, 'registrarSalida'])->name('becario.salida');
-    Route::post('/iniciar-pausa', [BecarioController::class, 'iniciarPausa'])->name('becario.iniciarPausa');
-    Route::post('/finalizar-pausa', [BecarioController::class, 'finalizarPausa'])->name('becario.finalizarPausa');
+
+
+// Modifica tus rutas existentes para que utilicen el nuevo controlador:
+Route::get('/dashboard', [AsistenciaController::class, 'index'])->name('dashboard');
+Route::post('/entrada', [AsistenciaController::class, 'registrarEntrada'])->name('entrada');
+Route::post('/salida', [AsistenciaController::class, 'registrarSalida'])->name('salida');
+Route::post('/pausa/iniciar', [AsistenciaController::class, 'iniciarPausa'])->name('pausa.iniciar');
+Route::post('/pausa/finalizar', [AsistenciaController::class, 'finalizarPausa'])->name('pausa.finalizar');
+Route::post('/asistencia', [AsistenciaController::class, 'store'])->name('asistencia.store');
 });
 
 // [POLLING DE ROL]: Endpoint ligero para detectar cambios de rol en tiempo real.

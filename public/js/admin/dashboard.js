@@ -18,18 +18,11 @@
         return `${h}:${m}:${s}`;
     }
 
-    // ---- Helpers de render (tabla) ----
+    // ---- Helper de render (usado tanto en la tabla como en las tarjetas) ----
     function actualizarTexto(id, icono, texto) {
         const el = document.getElementById(id);
         if (!el) return;
         el.innerHTML = `<i class="bi ${icono} mr-1"></i>${texto}`;
-    }
-
-    function actualizarExtras(id, e) {
-        const el = document.getElementById('extras-' + id);
-        if (!el) return;
-        el.innerHTML = `<i class="bi bi-alarm mr-1"></i>${formatoHMS(e.extras)}`;
-        el.title = `Entrada: ${formatoHMS(e.extrasEntrada)} · Salida: ${formatoHMS(e.extrasSalida)}`;
     }
 
     function actualizarTarjetasResumen(data) {
@@ -65,7 +58,6 @@
             <td class="py-3 text-center"><span id="salida-${a.user_id}" class="inline-flex items-center rounded-full bg-red-500/25 text-red-400 px-3 py-2 text-sm font-medium"><i class="bi bi-box-arrow-left mr-1"></i>${a.hora_salida}</span></td>
             <td class="py-3 text-center"><span id="pausas-${a.user_id}" class="inline-flex items-center rounded-full bg-yellow-500/25 text-yellow-400 px-3 py-2 text-sm font-medium"><i class="bi bi-cup-hot mr-1"></i>${formatoHMS(a.pausas_segundos)}</span></td>
             <td class="py-3 text-center"><span id="trabajado-${a.user_id}" class="inline-flex items-center rounded-full bg-cyan-500/25 text-cyan-400 px-3 py-2 text-sm font-medium"><i class="bi bi-stopwatch mr-1"></i>${formatoHMS(a.trabajado_segundos)}</span></td>
-            <td class="py-3 text-center"><span id="extras-${a.user_id}" class="inline-flex items-center rounded-full bg-blue-500/25 text-blue-400 px-3 py-2 text-sm font-medium" title="Entrada: ${formatoHMS(a.extras_entrada_segundos)} · Salida: ${formatoHMS(a.extras_salida_segundos)}"><i class="bi bi-alarm mr-1"></i>${formatoHMS(a.extras_segundos)}</span></td>
             <td class="py-3 text-center"><span id="estado-${a.user_id}" class="inline-flex items-center rounded-full px-3 py-2 text-sm font-medium ${a.estado.clase}">${a.estado.texto}</span></td>
         `;
         return tr;
@@ -76,11 +68,6 @@
         actualizarTexto('salida-' + a.user_id, 'bi-box-arrow-left', a.hora_salida);
         actualizarTexto('pausas-' + a.user_id, 'bi-cup-hot', formatoHMS(a.pausas_segundos));
         actualizarTexto('trabajado-' + a.user_id, 'bi-stopwatch', formatoHMS(a.trabajado_segundos));
-        actualizarExtras(a.user_id, {
-            extras: a.extras_segundos,
-            extrasEntrada: a.extras_entrada_segundos,
-            extrasSalida: a.extras_salida_segundos,
-        });
 
         const estado = document.getElementById('estado-' + a.user_id);
         if (estado) {
@@ -92,31 +79,11 @@
     function renderTablaVacia(tbody) {
         tbody.innerHTML = `
             <tr id="tabla-vacia">
-                <td colspan="8" class="text-center text-gray-400 py-10">
+                <td colspan="7" class="text-center text-gray-400 py-10">
                     <i class="bi bi-clock-history text-2xl block mb-2"></i>
                     No existen asistencias activas actualmente
                 </td>
             </tr>`;
-    }
-
-    // ---- Helpers de render (tarjetas móvil) ----
-    function actualizarTextoCard(id, icono, texto) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.innerHTML = `<i class="bi ${icono} mr-1"></i>${texto}`;
-    }
-
-    function actualizarExtrasCard(id, e) {
-        const el = document.getElementById('extras-card-' + id);
-        if (!el) return;
-        el.innerHTML = `
-            <i class="bi bi-alarm mr-1"></i>
-            <strong>Extras:</strong> ${formatoHMS(e.extras)}
-            <span class="mx-1">·</span>
-            Ent. ${formatoHMS(e.extrasEntrada)}
-            <span class="mx-1">·</span>
-            Sal. ${formatoHMS(e.extrasSalida)}
-        `;
     }
 
     function crearTarjeta(a) {
@@ -151,28 +118,15 @@
                     <p id="trabajado-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-cyan-400"><i class="bi bi-stopwatch mr-1"></i>${formatoHMS(a.trabajado_segundos)}</p>
                 </div>
             </div>
-            <div id="extras-card-${a.user_id}" class="px-4 py-2.5 text-[0.8rem] text-gray-400 border-t border-white/[0.08] text-center">
-                <i class="bi bi-alarm mr-1"></i>
-                <strong>Extras:</strong> ${formatoHMS(a.extras_segundos)}
-                <span class="mx-1">·</span>
-                Ent. ${formatoHMS(a.extras_entrada_segundos)}
-                <span class="mx-1">·</span>
-                Sal. ${formatoHMS(a.extras_salida_segundos)}
-            </div>
         `;
         return div;
     }
 
     function actualizarTarjeta(a) {
-        actualizarTextoCard('entrada-card-' + a.user_id, 'bi-box-arrow-in-right', a.hora_entrada);
-        actualizarTextoCard('salida-card-' + a.user_id, 'bi-box-arrow-left', a.hora_salida);
-        actualizarTextoCard('pausas-card-' + a.user_id, 'bi-cup-hot', formatoHMS(a.pausas_segundos));
-        actualizarTextoCard('trabajado-card-' + a.user_id, 'bi-stopwatch', formatoHMS(a.trabajado_segundos));
-        actualizarExtrasCard(a.user_id, {
-            extras: a.extras_segundos,
-            extrasEntrada: a.extras_entrada_segundos,
-            extrasSalida: a.extras_salida_segundos,
-        });
+        actualizarTexto('entrada-card-' + a.user_id, 'bi-box-arrow-in-right', a.hora_entrada);
+        actualizarTexto('salida-card-' + a.user_id, 'bi-box-arrow-left', a.hora_salida);
+        actualizarTexto('pausas-card-' + a.user_id, 'bi-cup-hot', formatoHMS(a.pausas_segundos));
+        actualizarTexto('trabajado-card-' + a.user_id, 'bi-stopwatch', formatoHMS(a.trabajado_segundos));
 
         const estado = document.getElementById('estado-card-' + a.user_id);
         if (estado) {
@@ -212,25 +166,19 @@
                     let baseTime = ahora;
                     let pTrabajado = a.trabajado_segundos;
                     let pPausas = a.pausas_segundos;
-                    let pExtras = a.extras_segundos;
-                    let pExtrasEnt = a.extras_entrada_segundos;
-                    let pExtrasSal = a.extras_salida_segundos;
 
                     // ANTI-JUMPING LOGIC:
                     // Si el estado no ha cambiado, evitamos resetear los valores con los del servidor
                     // para evitar micro-saltos por latencia. Mantenemos la base anterior y dejamos fluir el reloj.
-                    if (prev && prev.enPausa === a.en_pausa && prev.turnoTerminado === a.turno_terminado && prev.extrasCreciendo === a.extras_creciendo) {
+                    if (prev && prev.enPausa === a.en_pausa && prev.turnoTerminado === a.turno_terminado) {
                         const deltaPrev = (ahora - prev.lastSync) / 1000;
                         const trabajadoEstimado = prev.baseTrabajado + (!a.en_pausa ? deltaPrev : 0);
-                        
+
                         // Si la diferencia entre nuestro cálculo local y el servidor es mínima (< 5s), ignoramos la del server
                         if (Math.abs(trabajadoEstimado - a.trabajado_segundos) < 5) {
                             baseTime = prev.lastSync;
                             pTrabajado = prev.baseTrabajado;
                             pPausas = prev.basePausas;
-                            pExtras = prev.baseExtras;
-                            pExtrasEnt = prev.baseExtrasEntrada;
-                            pExtrasSal = prev.baseExtrasSalida;
                         }
                     }
 
@@ -238,13 +186,9 @@
                     estadoAsistencias[a.user_id] = {
                         baseTrabajado: pTrabajado,
                         basePausas: pPausas,
-                        baseExtras: pExtras,
-                        baseExtrasEntrada: pExtrasEnt,
-                        baseExtrasSalida: pExtrasSal,
                         lastSync: baseTime,
                         enPausa: a.en_pausa,
                         turnoTerminado: a.turno_terminado,
-                        extrasCreciendo: a.extras_creciendo,
                         sinRegistro: a.sin_registro
                     };
 
@@ -252,9 +196,6 @@
                     const deltaCalculado = (ahora - baseTime) / 1000;
                     a.trabajado_segundos = pTrabajado + (!a.en_pausa && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
                     a.pausas_segundos = pPausas + (a.en_pausa && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
-                    a.extras_segundos = pExtras + (a.extras_creciendo && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
-                    a.extras_salida_segundos = pExtrasSal + (a.extras_creciendo && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
-                    a.extras_entrada_segundos = pExtrasEnt;
 
                     // Render Tabla
                     let fila = document.querySelector(`tr[data-user="${a.user_id}"]`);
@@ -307,9 +248,6 @@
 
             let tTrabajado = e.baseTrabajado;
             let tPausas = e.basePausas;
-            let tExtras = e.baseExtras;
-            let tExtrasSalida = e.baseExtrasSalida;
-            let tExtrasEntrada = e.baseExtrasEntrada;
 
             if (e.enPausa) {
                 tPausas += deltaSegundos;
@@ -317,25 +255,12 @@
                 tTrabajado += deltaSegundos;
             }
 
-            if (e.extrasCreciendo) {
-                tExtras += deltaSegundos;
-                tExtrasSalida += deltaSegundos;
-            }
-
-            const dataExtras = {
-                extras: tExtras,
-                extrasEntrada: tExtrasEntrada,
-                extrasSalida: tExtrasSalida
-            };
-
             // Actualizamos la UI sin alterar el estado guardado, solo calculamos la diferencia
             actualizarTexto('pausas-' + userId, 'bi-cup-hot', formatoHMS(tPausas));
             actualizarTexto('trabajado-' + userId, 'bi-stopwatch', formatoHMS(tTrabajado));
-            actualizarExtras(userId, dataExtras);
 
-            actualizarTextoCard('pausas-card-' + userId, 'bi-cup-hot', formatoHMS(tPausas));
-            actualizarTextoCard('trabajado-card-' + userId, 'bi-stopwatch', formatoHMS(tTrabajado));
-            actualizarExtrasCard(userId, dataExtras);
+            actualizarTexto('pausas-card-' + userId, 'bi-cup-hot', formatoHMS(tPausas));
+            actualizarTexto('trabajado-card-' + userId, 'bi-stopwatch', formatoHMS(tTrabajado));
         });
     }
 

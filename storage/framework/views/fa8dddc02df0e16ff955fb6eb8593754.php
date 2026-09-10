@@ -48,13 +48,12 @@
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Salida</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Pausas</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Tiempo Total</th>
-                                    <th class="py-3 font-semibold uppercase text-xs text-center">Horas Extras</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Estado</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-asistencias">
                                 <tr id="tabla-vacia" class="hover:bg-[#F9F6EE] dark:hover:bg-white/5 transition-colors">
-                                    <td colspan="8" class="text-center text-gray-500 dark:text-gray-400 py-10">
+                                    <td colspan="7" class="text-center text-gray-500 dark:text-gray-400 py-10">
                                         <ion-icon name="time-outline" class="text-2xl block mb-2"></ion-icon>
                                         No existen asistencias activas actualmente
                                     </td>

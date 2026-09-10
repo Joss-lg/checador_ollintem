@@ -12,7 +12,13 @@ return new class extends Migration
             $table->id();
             // foreignId para el usuario
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-
+            
+            // foreignId para la asistencia integrado directamente
+            $table->foreignId('asistencia_id')
+                ->nullable()
+                ->after('user_id')
+                ->constrained('asistencias')
+                ->cascadeOnDelete();
             
             // Tiempos y motivo
             $table->time('inicio_pausa')->nullable();

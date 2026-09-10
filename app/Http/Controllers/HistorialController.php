@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 
 class HistorialController extends Controller
 {
+    /**
+     * CAPA DE SEGURIDAD: Validación interna para evitar acceso de no administradores.
+     */
     private function authorizeAdmin()
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') {
@@ -21,6 +24,7 @@ class HistorialController extends Controller
 
         $query = Asistencia::with(['user', 'pausas']);
 
+        // Filtro por búsqueda (Nombre o Correo del Becario)
         if ($request->filled('search')) {
             $buscar = $request->search;
             $query->whereHas('user', function ($q) use ($buscar) {
@@ -29,6 +33,7 @@ class HistorialController extends Controller
             });
         }
 
+        // Filtro por semana del mes
         if ($request->filled('semana')) {
             switch ($request->semana) {
                 case 1: $query->whereDay('fecha', '>=', 1)->whereDay('fecha', '<=', 7); break;
@@ -39,10 +44,12 @@ class HistorialController extends Controller
             }
         }
 
+        // Filtro por mes
         if ($request->filled('mes')) {
             $query->whereMonth('fecha', $request->mes);
         }
 
+        // Ordenamiento dinámico
         switch ($request->get('order')) {
             case 'az':
                 $query->join('users', 'users.id', '=', 'asistencias.user_id')
@@ -62,6 +69,7 @@ class HistorialController extends Controller
                 break;
         }
 
+        // Obtener meses disponibles para el selector de la vista
         $meses = Asistencia::selectRaw('MONTH(fecha) as numero_mes')
             ->distinct()
             ->orderBy('numero_mes')

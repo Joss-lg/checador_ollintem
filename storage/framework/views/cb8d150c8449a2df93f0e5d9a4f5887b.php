@@ -9,7 +9,7 @@
 
 
 <style>
-    @include('admin.reportes.pdf.partials.styles')
+    <?php echo $__env->make('admin.reportes.pdf.partials.styles', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 </style>
 
 </head>
@@ -46,13 +46,15 @@ Información del becario
 
 <td>
 <strong>Nombre:</strong>
-{{ $user->name }}
+<?php echo e($user->name); ?>
+
 </td>
 
 
 <td>
 <strong>Correo:</strong>
-{{ $user->email }}
+<?php echo e($user->email); ?>
+
 </td>
 
 
@@ -84,7 +86,8 @@ Jornadas
 </div>
 
 <div class="summary-value">
-{{ $resumen['jornadas'] }}
+<?php echo e($resumen['jornadas']); ?>
+
 </div>
 
 
@@ -99,7 +102,8 @@ Tiempo trabajado
 </div>
 
 <div class="summary-value">
-{{ $resumen['horas_trabajadas'] }}
+<?php echo e($resumen['horas_trabajadas']); ?>
+
 </div>
 
 
@@ -114,7 +118,8 @@ Pausas
 </div>
 
 <div class="summary-value">
-{{ $resumen['tiempo_pausa'] }}
+<?php echo e($resumen['tiempo_pausa']); ?>
+
 </div>
 
 
@@ -179,39 +184,42 @@ Trabajo
 <tbody>
 
 
-@foreach($asistencias as $asistencia)
+<?php $__currentLoopData = $asistencias; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $asistencia): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 
 
 <tr>
 
 
 <td>
-{{ $asistencia->fecha }}
+<?php echo e($asistencia->fecha); ?>
+
 </td>
 
 
 <td>
-{{ $asistencia->hora_entrada ?? '--' }}
+<?php echo e($asistencia->hora_entrada ?? '--'); ?>
+
 </td>
 
 
 <td>
-{{ $asistencia->hora_salida ?? '--' }}
+<?php echo e($asistencia->hora_salida ?? '--'); ?>
+
 </td>
 
 
 <td>
-{{ $asistencia->tiempoPausas() }}
+<?php echo e($asistencia->tiempoPausas()); ?>
+
 </td>
 
 
 <td>
 
-{{ 
-$asistencia->formatoTiempo(
+<?php echo e($asistencia->formatoTiempo(
     $asistencia->tiempoTrabajado()
-)
-}}
+)); ?>
+
 
 </td>
 
@@ -219,7 +227,7 @@ $asistencia->formatoTiempo(
 </tr>
 
 
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
 
 </tbody>
@@ -236,7 +244,8 @@ OLLIN CHECK |
 
 Generado:
 
-{{ now()->format('d/m/Y H:i') }}
+<?php echo e(now()->format('d/m/Y H:i')); ?>
+
 
 </div>
 
@@ -244,4 +253,4 @@ Generado:
 
 </body>
 
-</html>
+</html><?php /**PATH C:\Users\tortu\Checador-Online\resources\views/admin/reportes/pdf/individual.blade.php ENDPATH**/ ?>

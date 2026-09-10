@@ -4,7 +4,7 @@
 <div class="flex flex-col gap-3.5">
 
     {{-- Registrar entrada --}}
-    <form action="{{ route('becario.checar') }}" method="POST" class="m-0">
+    <form action="{{ route('entrada') }}" method="POST" class="m-0">
         @csrf
         <x-becario.accion-boton
             color="blue"
@@ -34,7 +34,7 @@
     </div>
 
     {{-- Finalizar pausa --}}
-    <form id="formFinalizarPausa" action="{{ route('becario.finalizarPausa') }}" method="POST" class="m-0">
+    <form id="formFinalizarPausa" action="{{ route('pausa.finalizar') }}" method="POST" class="m-0">
         @csrf
         <x-becario.accion-boton
             color="blue"
@@ -49,7 +49,7 @@
     </form>
 
     {{-- Registrar salida --}}
-    <form id="formSalida" action="{{ route('becario.salida') }}" method="POST" class="m-0">
+    <form id="formSalida" action="{{ route('salida') }}" method="POST" class="m-0">
         @csrf
         <x-becario.accion-boton
             color="red"

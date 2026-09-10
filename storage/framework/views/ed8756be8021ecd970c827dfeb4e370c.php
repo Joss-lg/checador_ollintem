@@ -18,7 +18,6 @@
                     <th class="hidden md:table-cell px-4 py-3 text-left text-xs uppercase font-bold">Pausas</th>
                     <th class="hidden md:table-cell px-4 py-3 text-left text-xs uppercase font-bold">Tiempo pausa</th>
                     <th class="px-4 py-3 text-left text-xs uppercase font-bold">Tiempo trabajado</th>
-                    <th class="hidden md:table-cell px-4 py-3 text-left text-xs uppercase font-bold">Horas extra</th>
                     <th class="px-4 py-3 text-left text-xs uppercase font-bold">Acciones</th>
                 </tr>
             </thead>
@@ -46,7 +45,7 @@
 <?php endif; ?>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="9" class="text-center py-10 text-gray-500 dark:text-gray-400">
+                        <td colspan="8" class="text-center py-10 text-gray-500 dark:text-gray-400">
                             <ion-icon name="folder-outline"class="text-4xl"></ion-icon>
                             <p class="mt-2">No existen registros.</p>
                         </td>

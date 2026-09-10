@@ -3,44 +3,99 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asistencia;
+use App\Models\Pausa;
+use App\Support\EstadoTurnoPresenter;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class AsistenciaController extends Controller
 {
-    // Ventanas de tiempo estrictas
-    private const HORA_ENTRADA_INICIO = '09:00:00';
-    private const HORA_ENTRADA_FIN    = '09:30:00';
-    private const HORA_SALIDA_INICIO  = '17:30:00';
-    private const HORA_SALIDA_FIN     = '18:00:00';
+    // Ventanas de horario estrictas (9:00 a.m. a 6:00 p.m.)
+    private const HORA_INICIO_JORNADA = '09:00:00';
+    private const HORA_FIN_JORNADA    = '18:00:00';
     private const HORA_CORTE_AUTO     = '18:01:00';
+
+    public function index()
+    {
+        $asistencia = Asistencia::where('user_id', Auth::id())
+            ->where('fecha', now()->toDateString())
+            ->latest()
+            ->first();
+
+        $estado = 'inactivo';
+        $horaEntrada = null;
+        $horaSalida = null;
+        $pausaInicio = null;
+        $segundosPausaAcumulados = 0;
+
+        if ($asistencia && !$asistencia->hora_salida) {
+            $horaEntrada = $asistencia->fecha . ' ' . $asistencia->hora_entrada;
+
+            $pausa = Pausa::where('asistencia_id', $asistencia->id)
+                ->whereNull('fin_pausa')
+                ->latest()
+                ->first();
+
+            if ($pausa) {
+                $estado = 'pausado';
+                $pausaInicio = $asistencia->fecha . ' ' . $pausa->inicio_pausa;
+            } else {
+                $estado = 'trabajando';
+            }
+
+            // Sumar pausas terminadas de la jornada activa
+            $pausas = Pausa::where('asistencia_id', $asistencia->id)
+                ->whereNotNull('fin_pausa')
+                ->get();
+
+            foreach ($pausas as $p) {
+                $inicio = Carbon::parse($p->inicio_pausa);
+                $fin = Carbon::parse($p->fin_pausa);
+                $segundosPausaAcumulados += $inicio->diffInSeconds($fin);
+            }
+        }
+
+        return view('becario.dashboard', [
+            'presenter' => new EstadoTurnoPresenter($estado ?? null),
+            'horaEntrada' => $horaEntrada ?? null,
+            'pausaInicio' => $pausaInicio ?? null,
+            'horaSalida' => $horaSalida ?? null,
+            'segundosPausaAcumulados' => $segundosPausaAcumulados ?? 0,
+        ]);
+    }
 
     public function registrarEntrada()
     {
         if (!Auth::check()) return redirect('/login');
 
-        $horaActual    = now();
-        $inicioEntrada = Carbon::today()->setTimeFromTimeString(self::HORA_ENTRADA_INICIO);
-        $finEntrada    = Carbon::today()->setTimeFromTimeString(self::HORA_ENTRADA_FIN);
+        $horaActual  = now();
+        $inicioTurno = Carbon::today()->setTimeFromTimeString(self::HORA_INICIO_JORNADA);
+        $finTurno    = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
 
-        // Restricción estricta: Solo entre 9:00 am y 9:30 am
-        if ($horaActual->lt($inicioEntrada) || $horaActual->gt($finEntrada)) {
+        // Restricción: solo se puede registrar entrada dentro del lapso de 9:00 am a 6:00 pm
+        if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'El registro de entrada solo está permitido estrictamente entre las 9:00 a.m. y las 9:30 a.m.'
+                'El registro de entrada solo está permitido estrictamente entre las 9:00 a.m. y las 6:00 p.m.'
             );
         }
 
-        // Evitar doble registro el mismo día
-        $existente = Asistencia::where('user_id', Auth::id())
-            ->where('fecha', now()->toDateString())
+        // Buscar si existe una jornada activa previa
+        $asistenciaActiva = Asistencia::where('user_id', Auth::id())
+            ->whereNull('hora_salida')
             ->first();
 
-        if ($existente) {
-            return back()->with(
-                'error',
-                'Ya cuentas con un registro de entrada correspondiente al día de hoy.'
-            );
+        if ($asistenciaActiva) {
+            $hoy = now()->toDateString();
+            
+            if ($asistenciaActiva->fecha === $hoy) {
+                return back()->with('error', 'Ya cuentas con un registro de entrada activo para el día de hoy.');
+            }
+
+            // Si la jornada anterior quedó abierta y cruzó días sin marcar salida dentro del horario, 
+            // se le aplica el corte automático a las 18:01:00 de su respectiva fecha.
+            $asistenciaActiva->update(['hora_salida' => self::HORA_FIN_JORNADA]);
         }
 
         Asistencia::create([
@@ -57,54 +112,107 @@ class AsistenciaController extends Controller
         if (!Auth::check()) return redirect('/login');
 
         $horaActual      = now();
-        $inicioSalida    = Carbon::today()->setTimeFromTimeString(self::HORA_SALIDA_INICIO);
-        $finSalida       = Carbon::today()->setTimeFromTimeString(self::HORA_SALIDA_FIN);
+        $inicioTurno     = Carbon::today()->setTimeFromTimeString(self::HORA_INICIO_JORNADA);
+        $finTurno        = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
         $corteAutomatico = Carbon::today()->setTimeFromTimeString(self::HORA_CORTE_AUTO);
 
-        // 1. Corte automático: Si son las 6:01 p.m. o más tarde, se cierra automáticamente
+        // Si son las 6:01 p.m. en adelante, se marca salida automáticamente a las 6:00 p.m. (18:00:00) para turnos abiertos
         if ($horaActual->gte($corteAutomatico)) {
             $actualizados = Asistencia::where('user_id', Auth::id())
                 ->whereNull('hora_salida')
-                ->update(['hora_salida' => self::HORA_SALIDA_FIN]);
+                ->update(['hora_salida' => self::HORA_FIN_JORNADA]);
 
             if ($actualizados > 0) {
                 return back()->with(
                     'warning',
-                    'Ha pasado el límite de las 6:01 p.m. Tu turno ha sido cerrado automáticamente a las 18:00 hrs.'
+                    'Al no registrar salida dentro del horario permitido, tu turno fue cerrado automáticamente a las 6:00 p.m.'
                 );
             }
         }
 
-        // 2. Restricción: No se permite registrar salida antes de las 5:30 p.m.
-        if ($horaActual->lt($inicioSalida)) {
+        // Restricción estricta de salida: debe ser de 9:00 am a 6:00 pm
+        if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'Aún no es hora de salida. El horario permitido para registrar salida es de 5:30 p.m. a 6:00 p.m.'
+                'El registro de salida debe realizarse estrictamente entre las 9:00 a.m. y las 6:00 p.m.'
             );
         }
 
-        // Buscamos el registro activo del usuario para el día de hoy
         $asistencia = Asistencia::where('user_id', Auth::id())
             ->whereNull('hora_salida')
             ->where('fecha', now()->toDateString())
             ->first();
 
         if (!$asistencia) {
-            return back()->with(
-                'error',
-                'No se encontró un registro de entrada activo para el día de hoy.'
-            );
+            return back()->with('error', 'No se encontró un registro de entrada activo para el día de hoy.');
         }
 
-        // 3. Si intenta registrar entre las 6:00 p.m. y las 6:01 p.m., se topa exactamente a las 18:00:00
-        $horaSalida = $horaActual->gt($finSalida) 
-            ? self::HORA_SALIDA_FIN 
-            : $horaActual->format('H:i:s');
+        $pausaActiva = Pausa::where('asistencia_id', $asistencia->id)
+            ->whereNull('fin_pausa')
+            ->exists();
 
+        if ($pausaActiva) {
+            return back()->with('error', 'Primero debes finalizar tu pausa activa antes de registrar salida.');
+        }
+
+        // Registrar la salida con la hora exacta dentro del rango permitido
         $asistencia->update([
-            'hora_salida' => $horaSalida
+            'hora_salida' => $horaActual->format('H:i:s')
         ]);
 
         return back()->with('success', 'Salida registrada correctamente.');
+    }
+
+    public function iniciarPausa(Request $request)
+    {
+        if (!Auth::check()) return redirect('/login');
+
+        $asistencia = Asistencia::where('user_id', Auth::id())
+            ->whereNull('hora_salida')
+            ->latest('fecha')
+            ->first();
+
+        if (!$asistencia) {
+            return back()->with('error', 'No existe una jornada activa para iniciar pausa.');
+        }
+
+        $pausaActiva = Pausa::where('user_id', Auth::id())
+            ->where('asistencia_id', $asistencia->id)
+            ->whereNull('fin_pausa')
+            ->exists();
+
+        if ($pausaActiva) {
+            return back()->with('error', 'Ya cuentas con una pausa activa.');
+        }
+
+        Pausa::create([
+            'user_id'       => Auth::id(),
+            'asistencia_id' => $asistencia->id,
+            'inicio_pausa'  => now()->format('H:i:s'),
+            'motivo'        => $request->motivo,
+            'fecha'         => now()->toDateString(),
+        ]);
+
+        return back()->with('success', 'Pausa iniciada correctamente.');
+    }
+
+    public function finalizarPausa()
+    {
+        if (!Auth::check()) return redirect('/login');
+
+        $pausa = Pausa::where('user_id', Auth::id())
+            ->whereNull('fin_pausa')
+            ->latest()
+            ->first();
+
+        if (!$pausa) {
+            return back()->with('error', 'No se encontró ninguna pausa activa.');
+        }
+
+        $pausa->update([
+            'fin_pausa' => now()->format('H:i:s'),
+        ]);
+
+        return back()->with('success', 'Pausa finalizada correctamente.');
     }
 }
