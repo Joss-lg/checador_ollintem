@@ -1,3 +1,4 @@
+login.blade.php
 @extends('layouts.app')
 
 @section('content')
@@ -101,8 +102,17 @@
                         <input
                             type="password"
                             name="password"
-                            class="w-full bg-gray-50 dark:bg-[#0f1724] border {{ $errors->has('password') ? 'border-red-500' : 'border-gray-300 dark:border-white/[.08]' }} text-gray-900 dark:text-white p-3.5 pl-11 rounded-xl box-border focus:bg-white dark:focus:bg-[#101b2c] focus:border-cyan-400 focus:shadow-[0_0_0_.20rem_rgba(34,211,238,.25)] focus:outline-none transition-colors"
+                            id="password"
+                            class="w-full bg-gray-50 dark:bg-[#0f1724] border {{ $errors->has('password') ? 'border-red-500' : 'border-gray-300 dark:border-white/[.08]' }} text-gray-900 dark:text-white p-3.5 pl-11 pr-11 rounded-xl box-border focus:bg-white dark:focus:bg-[#101b2c] focus:border-cyan-400 focus:shadow-[0_0_0_.20rem_rgba(34,211,238,.25)] focus:outline-none transition-colors"
                             required>
+                        <button
+                            type="button"
+                            id="togglePassword"
+                            aria-label="Mostrar contraseña"
+                            aria-pressed="false"
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-cyan-600/70 dark:text-cyan-400/70 hover:text-cyan-500 dark:hover:text-cyan-300 transition-colors focus:outline-none">
+                            <ion-icon name="eye-outline" id="togglePasswordIcon" class="text-lg"></ion-icon>
+                        </button>
                     </div>
 
                     @error('password')
@@ -155,5 +165,24 @@
         .ollin-ring, .ollin-scan { animation: none !important; }
     }
 </style>
+
+<script>
+    (function () {
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('togglePasswordIcon');
+
+        if (!toggleBtn || !passwordInput || !toggleIcon) return;
+
+        toggleBtn.addEventListener('click', function () {
+            const isHidden = passwordInput.type === 'password';
+
+            passwordInput.type = isHidden ? 'text' : 'password';
+            toggleIcon.setAttribute('name', isHidden ? 'eye-off-outline' : 'eye-outline');
+            toggleBtn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+            toggleBtn.setAttribute('aria-label', isHidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        });
+    })();
+</script>
 
 @endsection

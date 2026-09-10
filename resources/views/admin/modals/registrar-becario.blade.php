@@ -101,13 +101,25 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Contraseña</label>
-                            <input type="password" name="password" placeholder="••••••••" required
-                                   class="w-full px-4 py-2.5 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                            <div class="relative">
+                                <input type="password" name="password" id="reg_password" placeholder="••••••••" required
+                                       class="w-full px-4 py-2.5 pr-11 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                                <button type="button" onclick="togglePasswordVisibility('reg_password', this)" aria-label="Mostrar contraseña" aria-pressed="false"
+                                        class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none">
+                                    <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirmar Contraseña</label>
-                            <input type="password" name="password_confirmation" placeholder="••••••••" required
-                                   class="w-full px-4 py-2.5 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                            <div class="relative">
+                                <input type="password" name="password_confirmation" id="reg_password_confirmation" placeholder="••••••••" required
+                                       class="w-full px-4 py-2.5 pr-11 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                                <button type="button" onclick="togglePasswordVisibility('reg_password_confirmation', this)" aria-label="Mostrar contraseña" aria-pressed="false"
+                                        class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none">
+                                    <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -193,4 +205,16 @@ document.getElementById('formRegistrarBecario').addEventListener('submit', funct
 // Opcional: Ocultar la alerta automáticamente cuando el usuario empiece a escribir de nuevo
 document.querySelector('input[name="password"]').addEventListener('input', ocultarAlertaContrasena);
 document.querySelector('input[name="password_confirmation"]').addEventListener('input', ocultarAlertaContrasena);
+
+// Ojito reutilizable: muestra/oculta la contraseña y cambia el icono
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('ion-icon');
+    const isHidden = input.type === 'password';
+
+    input.type = isHidden ? 'text' : 'password';
+    icon.setAttribute('name', isHidden ? 'eye-off-outline' : 'eye-outline');
+    btn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+    btn.setAttribute('aria-label', isHidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
+}
 </script>

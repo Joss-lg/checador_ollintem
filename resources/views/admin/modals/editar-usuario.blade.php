@@ -2,7 +2,7 @@
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/70 backdrop-blur-sm dark:backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 ease-out p-4" 
      role="dialog" aria-modal="true">
     
-    <div class="modal-dialog relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-[#15181d] text-gray-800 dark:text-white border border-[#EAE4D8] dark:border-white/10 rounded-2xl shadow-2xl dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden transform scale-95 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+    <div class="modal-dialog relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-white dark:bg-[#15181d] text-gray-800 dark:text-white border border-[#EAE4D8] dark:border-white/10 rounded-2xl shadow-2xl dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden transform scale-95 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
 
         <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 dark:opacity-90"></div>
 
@@ -28,7 +28,7 @@
         <form id="formEditar" method="POST" class="flex flex-col min-h-0 flex-grow">
             @csrf @method('PUT')
             
-            <div class="px-6 py-5 overflow-y-auto flex-grow min-h-0">
+            <div class="ollin-modal-scroll px-6 py-5 overflow-y-auto flex-grow min-h-0">
                 <!-- Alerta de Contraseña Dinámica para Edición (Oculta por defecto) -->
 <div id="passwordAlertEdit" class="hidden overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 -translate-y-4 mb-6">
     <div class="flex items-start gap-3 p-4 text-sm text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl shadow-sm">
@@ -88,13 +88,25 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                             Nueva Contraseña <span class="text-gray-400 dark:text-gray-600 text-xs">(Opcional)</span>
                         </label>
-                        <input type="password" name="password" placeholder="Mínimo 8 caracteres"
-                               class="w-full px-4 py-2.5 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                        <div class="relative">
+                            <input type="password" name="password" id="edit_password" placeholder="Mínimo 8 caracteres"
+                                   class="w-full px-4 py-2.5 pr-11 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                            <button type="button" onclick="togglePasswordVisibility('edit_password', this)" aria-label="Mostrar contraseña" aria-pressed="false"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none">
+                                <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirmar Nueva Contraseña</label>
-                        <input type="password" name="password_confirmation" 
-                               class="w-full px-4 py-2.5 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                        <div class="relative">
+                            <input type="password" name="password_confirmation" id="edit_password_confirmation"
+                                   class="w-full px-4 py-2.5 pr-11 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
+                            <button type="button" onclick="togglePasswordVisibility('edit_password_confirmation', this)" aria-label="Mostrar contraseña" aria-pressed="false"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none">
+                                <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-600">Déjalo en blanco si no deseas cambiarla.</p>
@@ -111,6 +123,36 @@
         </form>
     </div>
 </div>
+
+<style>
+    /* Scrollbar delgado y con el mismo tono azul/cian del resto de la UI */
+    .ollin-modal-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(37, 99, 235, .35) transparent;
+    }
+    .ollin-modal-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    .ollin-modal-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .ollin-modal-scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(37, 99, 235, .35);
+        border-radius: 9999px;
+    }
+    .ollin-modal-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(37, 99, 235, .6);
+    }
+    .dark .ollin-modal-scroll {
+        scrollbar-color: rgba(34, 211, 238, .3) transparent;
+    }
+    .dark .ollin-modal-scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(34, 211, 238, .3);
+    }
+    .dark .ollin-modal-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(34, 211, 238, .55);
+    }
+</style>
 
 <script>
 // Mantén tu lógica igual, solo le añadí abrir el modal automáticamente
