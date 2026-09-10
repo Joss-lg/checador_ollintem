@@ -25,7 +25,7 @@ class LoginController extends Controller
             return redirect()->route('admin.dashboard');
         }
         
-        return redirect()->route('becario.dashboard');
+        return redirect()->route('dashboard');
     }
     // En tu controlador de autenticación (ej: Auth\LoginController.php)
 public function logout(Request $request)
