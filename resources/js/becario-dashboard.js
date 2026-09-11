@@ -1,5 +1,4 @@
-
-    // --- Helpers genéricos de modal ---
+// --- Helpers genéricos de modal ---
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -137,7 +136,15 @@
                     const fin = isNaN(finRaw) ? ahora : finRaw;
                     segundosTrabajados = Math.floor((fin - inicio) / 1000) - segundosPausados;
                 } else if (cfg.estado === 'trabajando') {
-                    segundosTrabajados = Math.floor((ahora - inicio) / 1000) - segundosPausados;
+                    // Tope a las 18:00 del día de la entrada: si ya pasó esa hora y el
+                    // servidor todavía no cerró la jornada (cron pendiente), el contador
+                    // no debe seguir subiendo indefinidamente.
+                    const fechaEntrada = new Date(inicio);
+                    const corte = new Date(fechaEntrada);
+                    corte.setHours(18, 0, 0, 0);
+                    const finEfectivo = ahora > corte.getTime() ? corte.getTime() : ahora;
+
+                    segundosTrabajados = Math.floor((finEfectivo - inicio) / 1000) - segundosPausados;
                 }
             }
 

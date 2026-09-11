@@ -1,8 +1,8 @@
-// Fonts
-@import url('https://fonts.bunny.net/css?family=Nunito');
+// 1. Primero la regla @use (obligatorio que sea lo primerito)
+@use 'variables' as *;
 
-// Variables
-@import 'variables';
+// 2. Luego las fuentes y Tailwind
+@import url('https://fonts.bunny.net/css?family=Nunito');
 
 @tailwind base;
 @tailwind components;

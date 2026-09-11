@@ -19,6 +19,10 @@ class Asistencia extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Hora de corte de jornada (debe coincidir con HORA_FIN_JORNADA en AsistenciaController
+    // y con la hora a la que cierra el comando asistencias:cerrar-automatico).
+    private const HORA_FIN_JORNADA = '18:00:00';
+
     public function tiempoTrabajado()
     {
         if (!$this->hora_entrada) {
@@ -26,11 +30,19 @@ class Asistencia extends Model
         }
         
         $entrada = Carbon::parse($this->fecha . ' ' . $this->hora_entrada);
-        
-        $salida = $this->hora_salida
-            ? Carbon::parse($this->fecha . ' ' . $this->hora_salida)
-            : now();
-            
+
+        if ($this->hora_salida) {
+            $salida = Carbon::parse($this->fecha . ' ' . $this->hora_salida);
+        } else {
+            // Jornada aún abierta: si ya pasamos la hora de corte del día de la
+            // asistencia, no seguimos sumando con now() (eso infla el tiempo
+            // mientras el cierre automático no haya corrido todavía). Topamos
+            // en la hora de corte; si aún no llega, sí usamos la hora actual.
+            $corte = Carbon::parse($this->fecha . ' ' . self::HORA_FIN_JORNADA);
+            $ahora = now();
+            $salida = $ahora->gt($corte) ? $corte : $ahora;
+        }
+
         $totalBruto = $entrada->diffInSeconds($salida);
         $pausas = $this->tiempoPausasSegundos();
         

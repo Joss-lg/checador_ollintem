@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->alias([
         'role' => \App\Http\Middleware\EnsureUserRole::class,
     ]);
+
+    $middleware->append(\App\Http\Middleware\CerrarJornadasVencidas::class);
 })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

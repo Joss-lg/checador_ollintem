@@ -17,8 +17,8 @@ class CerrarJornadasAutomaticamente extends Command
         // Actualiza todos los registros del día actual que siguen sin hora de salida
         $afectados = Asistencia::where('fecha', $hoy)
             ->whereNull('hora_salida')
-            ->update(['hora_salida' => '18:01:00']);
+            ->update(['hora_salida' => '18:00:00']);
 
-        $this->info("Se cerraron automáticamente {$afectados} jornadas a las 18:01:00.");
+        $this->info("Se cerraron automáticamente {$afectados} jornadas a las 18:00:00.");
     }
 }

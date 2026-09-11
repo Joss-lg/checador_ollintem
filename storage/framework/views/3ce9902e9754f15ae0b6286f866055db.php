@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 <div class="fixed inset-0 z-0 flex justify-center items-center overflow-hidden p-5 bg-[#eef4fb] dark:bg-[#050b16] transition-colors duration-500">
 
@@ -19,11 +17,11 @@
 
     <!-- Fondo para TEMA CLARO (se muestra por defecto, se oculta en oscuro) -->
     <div class="absolute inset-0 bg-center bg-no-repeat bg-[length:900px] opacity-[0.035] blur-[5px] scale-[1.15] block dark:hidden"
-         style="background-image:url('{{ asset('images/ollintem-logo-blanc.png') }}')"></div>
+         style="background-image:url('<?php echo e(asset('images/ollintem-logo-blanc.png')); ?>')"></div>
 
     <!-- Fondo para TEMA OSCURO (se oculta en claro, se muestra en oscuro) -->
     <div class="absolute inset-0 bg-center bg-no-repeat bg-[length:900px] opacity-[0.07] blur-[5px] scale-[1.15] hidden dark:block"
-         style="background-image:url('{{ asset('images/ollintem-logo.png') }}')"></div>
+         style="background-image:url('<?php echo e(asset('images/ollintem-logo.png')); ?>')"></div>
 
     <!-- Capa de superposición -->
     <div class="absolute inset-0 bg-white/30 dark:bg-[#04070f]/60 transition-colors duration-500"></div>
@@ -46,11 +44,11 @@
                 <span class="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-cyan-400"></span>
 
                 <!-- Logo para el TEMA CLARO -->
-                <img src="{{ asset('images/ollintem-logo-blanc.png') }}"
+                <img src="<?php echo e(asset('images/ollintem-logo-blanc.png')); ?>"
                      class="w-[170px] mx-auto block dark:hidden">
 
                 <!-- Logo para el TEMA OSCURO -->
-                <img src="{{ asset('images/ollintem-logo.png') }}"
+                <img src="<?php echo e(asset('images/ollintem-logo.png')); ?>"
                      class="w-[170px] mx-auto hidden dark:block">
             </div>
 
@@ -65,8 +63,8 @@
 
         <div class="p-5">
 
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('login')); ?>">
+                <?php echo csrf_field(); ?>
 
                 <div class="mb-3">
                     <label class="text-gray-700 dark:text-white font-medium dark:font-normal block mb-1.5">Correo electrónico</label>
@@ -78,17 +76,24 @@
                         <input
                             type="email"
                             name="email"
-                            value="{{ old('email') }}"
-                            class="w-full bg-gray-50 dark:bg-[#0f1724] border {{ $errors->has('email') ? 'border-red-500' : 'border-gray-300 dark:border-white/[.08]' }} text-gray-900 dark:text-white p-3.5 pl-11 rounded-xl box-border focus:bg-white dark:focus:bg-[#101b2c] focus:border-cyan-400 focus:shadow-[0_0_0_.20rem_rgba(34,211,238,.25)] focus:outline-none transition-colors"
+                            value="<?php echo e(old('email')); ?>"
+                            class="w-full bg-gray-50 dark:bg-[#0f1724] border <?php echo e($errors->has('email') ? 'border-red-500' : 'border-gray-300 dark:border-white/[.08]'); ?> text-gray-900 dark:text-white p-3.5 pl-11 rounded-xl box-border focus:bg-white dark:focus:bg-[#101b2c] focus:border-cyan-400 focus:shadow-[0_0_0_.20rem_rgba(34,211,238,.25)] focus:outline-none transition-colors"
                             required
                             autofocus>
                     </div>
 
-                    @error('email')
+                    <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                         <span class="block text-red-500 dark:text-red-400 text-sm mt-1.5">
-                            <strong>{{ $message }}</strong>
+                            <strong><?php echo e($message); ?></strong>
                         </span>
-                    @enderror
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
                 <div class="mb-3">
@@ -102,7 +107,7 @@
                             type="password"
                             name="password"
                             id="password"
-                            class="w-full bg-gray-50 dark:bg-[#0f1724] border {{ $errors->has('password') ? 'border-red-500' : 'border-gray-300 dark:border-white/[.08]' }} text-gray-900 dark:text-white p-3.5 pl-11 pr-11 rounded-xl box-border focus:bg-white dark:focus:bg-[#101b2c] focus:border-cyan-400 focus:shadow-[0_0_0_.20rem_rgba(34,211,238,.25)] focus:outline-none transition-colors"
+                            class="w-full bg-gray-50 dark:bg-[#0f1724] border <?php echo e($errors->has('password') ? 'border-red-500' : 'border-gray-300 dark:border-white/[.08]'); ?> text-gray-900 dark:text-white p-3.5 pl-11 pr-11 rounded-xl box-border focus:bg-white dark:focus:bg-[#101b2c] focus:border-cyan-400 focus:shadow-[0_0_0_.20rem_rgba(34,211,238,.25)] focus:outline-none transition-colors"
                             required>
                         <button
                             type="button"
@@ -114,11 +119,18 @@
                         </button>
                     </div>
 
-                    @error('password')
+                    <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                         <span class="block text-red-500 dark:text-red-400 text-sm mt-1.5">
-                            <strong>{{ $message }}</strong>
+                            <strong><?php echo e($message); ?></strong>
                         </span>
-                    @enderror
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
                 <div class="flex items-center gap-2 mb-3">
@@ -184,4 +196,5 @@
     })();
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Usuario\checador_ollintem\resources\views/auth/login.blade.php ENDPATH**/ ?>
