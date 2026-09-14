@@ -25,3 +25,10 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Caché de vistas Blade compiladas — se genera localmente en cada máquina
+# y nunca debe subirse al repo (lleva rutas absolutas del sistema operativo
+# de quien lo compiló, como C:\Users\..., que rompen en otros entornos).
+/storage/framework/views/
+/storage/framework/cache/
+/storage/framework/sessions/

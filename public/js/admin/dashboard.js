@@ -4,6 +4,18 @@
     // ---- Configuración ----
     const POLLING_MS = 1750; // frecuencia de sincronización con el servidor
     const TICK_MS = 1000;    // frecuencia del reloj visual (1 segundo para reloj fluido)
+    const HORA_FIN_JORNADA = 18; // debe coincidir con HORA_FIN_JORNADA del backend (18:00)
+
+    // Timestamp (ms) de las 18:00 de HOY. El backend puede tardar hasta un
+    // minuto en cerrar la jornada (o depender de que alguien más visite el
+    // sitio), así que aquí topamos el conteo visual en el mismo instante,
+    // para que el reloj en pantalla nunca muestre tiempo más allá de la
+    // hora de corte aunque el servidor todavía no haya marcado la salida.
+    function limiteJornadaHoyMs() {
+        const limite = new Date();
+        limite.setHours(HORA_FIN_JORNADA, 0, 0, 0);
+        return limite.getTime();
+    }
 
     // ---- Estado en memoria ----
     let estadoAsistencias = {}; // keyed por user_id
@@ -88,34 +100,34 @@
 
     function crearTarjeta(a) {
         const div = document.createElement('div');
-        div.className = 'bg-white/[0.03] border border-white/10 rounded-xl overflow-hidden';
+        div.className = 'bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden transition-colors';
         div.setAttribute('data-user-card', a.user_id);
         div.innerHTML = `
-            <div class="flex items-center justify-center gap-2 px-4 py-3 border-b border-white/10 relative">
-                <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-full bg-gray-500/25 border border-gray-500 flex items-center justify-center text-cyan-400 font-bold text-xs flex-shrink-0">
+            <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 dark:border-white/10">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <div class="w-8 h-8 rounded-full bg-gray-500/25 border border-gray-500 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-bold text-xs flex-shrink-0">
                         ${a.user_inicial}
                     </div>
-                    <span class="text-white font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis">${a.user_name}</span>
+                    <span class="text-gray-900 dark:text-white font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis min-w-0">${a.user_name}</span>
                 </div>
-                <span id="estado-card-${a.user_id}" class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium absolute right-4 ${a.estado.clase}">${a.estado.texto}</span>
+                <span id="estado-card-${a.user_id}" class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium flex-shrink-0 ${a.estado.clase}">${a.estado.texto}</span>
             </div>
             <div class="grid grid-cols-2 text-center">
-                <div class="p-2.5 px-4 border-r border-b border-white/[0.08]">
-                    <p class="m-0 text-[0.72rem] uppercase text-gray-400">Entrada</p>
-                    <p id="entrada-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-green-500"><i class="bi bi-box-arrow-in-right mr-1"></i>${a.hora_entrada}</p>
+                <div class="p-2.5 px-4 border-r border-b border-gray-200 dark:border-white/[0.08]">
+                    <p class="m-0 text-[0.72rem] uppercase text-gray-500 dark:text-gray-400">Entrada</p>
+                    <p id="entrada-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-green-600 dark:text-green-500"><i class="bi bi-box-arrow-in-right mr-1"></i>${a.hora_entrada}</p>
                 </div>
-                <div class="p-2.5 px-4 border-b border-white/[0.08]">
-                    <p class="m-0 text-[0.72rem] uppercase text-gray-400">Salida</p>
-                    <p id="salida-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-red-500"><i class="bi bi-box-arrow-left mr-1"></i>${a.hora_salida}</p>
+                <div class="p-2.5 px-4 border-b border-gray-200 dark:border-white/[0.08]">
+                    <p class="m-0 text-[0.72rem] uppercase text-gray-500 dark:text-gray-400">Salida</p>
+                    <p id="salida-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-red-600 dark:text-red-500"><i class="bi bi-box-arrow-left mr-1"></i>${a.hora_salida}</p>
                 </div>
-                <div class="p-2.5 px-4 border-r border-white/[0.08]">
-                    <p class="m-0 text-[0.72rem] uppercase text-gray-400">Pausas</p>
-                    <p id="pausas-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-yellow-500"><i class="bi bi-cup-hot mr-1"></i>${formatoHMS(a.pausas_segundos)}</p>
+                <div class="p-2.5 px-4 border-r border-gray-200 dark:border-white/[0.08]">
+                    <p class="m-0 text-[0.72rem] uppercase text-gray-500 dark:text-gray-400">Pausas</p>
+                    <p id="pausas-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-yellow-600 dark:text-yellow-500"><i class="bi bi-cup-hot mr-1"></i>${formatoHMS(a.pausas_segundos)}</p>
                 </div>
                 <div class="p-2.5 px-4">
-                    <p class="m-0 text-[0.72rem] uppercase text-gray-400">Tiempo total</p>
-                    <p id="trabajado-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-cyan-400"><i class="bi bi-stopwatch mr-1"></i>${formatoHMS(a.trabajado_segundos)}</p>
+                    <p class="m-0 text-[0.72rem] uppercase text-gray-500 dark:text-gray-400">Tiempo total</p>
+                    <p id="trabajado-card-${a.user_id}" class="mt-0.5 text-[0.85rem] text-cyan-600 dark:text-cyan-400"><i class="bi bi-stopwatch mr-1"></i>${formatoHMS(a.trabajado_segundos)}</p>
                 </div>
             </div>
         `;
@@ -130,7 +142,7 @@
 
         const estado = document.getElementById('estado-card-' + a.user_id);
         if (estado) {
-            estado.className = 'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium absolute right-4 ' + a.estado.clase;
+            estado.className = 'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium flex-shrink-0 ' + a.estado.clase;
             estado.textContent = a.estado.texto;
         }
     }
@@ -193,7 +205,8 @@
                     };
 
                     // Calculamos el valor interpolado actual para la primera renderización tras recibir el fetch
-                    const deltaCalculado = (ahora - baseTime) / 1000;
+                    const ahoraEfectivo = Math.min(ahora, limiteJornadaHoyMs());
+                    const deltaCalculado = Math.max(0, (ahoraEfectivo - baseTime) / 1000);
                     a.trabajado_segundos = pTrabajado + (!a.en_pausa && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
                     a.pausas_segundos = pPausas + (a.en_pausa && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
 
@@ -238,13 +251,15 @@
     // ---- Reloj visual local (entre sincronizaciones) ----
     function tick() {
         const ahora = Date.now();
+        const ahoraEfectivo = Math.min(ahora, limiteJornadaHoyMs());
 
         Object.keys(estadoAsistencias).forEach(userId => {
             const e = estadoAsistencias[userId];
             if (e.turnoTerminado || e.sinRegistro) return;
 
-            // Calculamos cuánto tiempo real ha pasado desde que guardamos el tiempo base
-            const deltaSegundos = (ahora - e.lastSync) / 1000;
+            // Calculamos cuánto tiempo real ha pasado desde que guardamos el tiempo base,
+            // sin rebasar nunca la hora de corte de jornada (18:00).
+            const deltaSegundos = Math.max(0, (ahoraEfectivo - e.lastSync) / 1000);
 
             let tTrabajado = e.baseTrabajado;
             let tPausas = e.basePausas;

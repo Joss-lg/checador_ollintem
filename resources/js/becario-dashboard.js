@@ -136,15 +136,7 @@
                     const fin = isNaN(finRaw) ? ahora : finRaw;
                     segundosTrabajados = Math.floor((fin - inicio) / 1000) - segundosPausados;
                 } else if (cfg.estado === 'trabajando') {
-                    // Tope a las 18:00 del día de la entrada: si ya pasó esa hora y el
-                    // servidor todavía no cerró la jornada (cron pendiente), el contador
-                    // no debe seguir subiendo indefinidamente.
-                    const fechaEntrada = new Date(inicio);
-                    const corte = new Date(fechaEntrada);
-                    corte.setHours(18, 0, 0, 0);
-                    const finEfectivo = ahora > corte.getTime() ? corte.getTime() : ahora;
-
-                    segundosTrabajados = Math.floor((finEfectivo - inicio) / 1000) - segundosPausados;
+                    segundosTrabajados = Math.floor((ahora - inicio) / 1000) - segundosPausados;
                 }
             }
 
@@ -211,3 +203,122 @@
         });
 
     });
+
+    // ==========================================
+    // DETECCIÓN DE INACTIVIDAD
+    // ==========================================
+    //
+    // Flujo:
+    //  1. El usuario lleva WARN_MINUTES sin mover el ratón, teclear ni hacer clic.
+    //  2. Se abre el modal de inactividad con una cuenta regresiva de CLOSE_MINUTES.
+    //  3a. Si pulsa "Sigo trabajando" → se cierra el modal y se reinicia el timer.
+    //  3b. Si no responde antes de que llegue a 0 → se envía el form POST /salida/inactividad.
+    //
+    // Solo se activa si el estado es 'trabajando' (no en pausa, no al terminar).
+    // ==========================================
+
+    (function iniciarDeteccionInactividad() {
+
+        const cfg = window.checadorConfig || {};
+
+        // Solo tiene sentido cuando hay jornada activa sin pausa.
+        if (cfg.estado !== 'trabajando') return;
+
+        // ── Configuración de tiempos ──────────────────────────────────────
+        // WARN_MS:  tiempo de inactividad antes de mostrar el aviso  (45 min)
+        // CLOSE_MS: tiempo de la cuenta regresiva antes de auto-salida (10 min)
+        const WARN_MS  = 60 * 60 * 1000;
+        const CLOSE_MS = 5 * 60 * 1000;
+        // ─────────────────────────────────────────────────────────────────
+
+        const modal          = document.getElementById('modalInactividad');
+        const cuenta         = document.getElementById('cuentaRegresivaInactividad');
+        const btnSigo        = document.getElementById('btnSigoTrabajando');
+        const formSalida     = document.getElementById('formSalidaInactividad');
+
+        if (!modal || !cuenta || !btnSigo || !formSalida) return;
+
+        let timerInactividad  = null;   // dispara el aviso tras WARN_MS sin actividad
+        let timerCuentaRegres = null;   // cuenta regresiva del modal
+        let intervalDisplay   = null;   // refresca el número en pantalla cada segundo
+        let cuentaFin         = null;   // timestamp en que debe cerrarse la jornada
+
+        // ── Abrir y cerrar modal (reutiliza las funciones ya existentes) ──
+        function mostrarModal() {
+            if (typeof window.openModal === 'function') {
+                window.openModal('modalInactividad');
+            } else {
+                // Fallback por si openModal aún no cargó
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            }
+            iniciarCuentaRegresiva();
+        }
+
+        function ocultarModal() {
+            if (typeof window.closeModal === 'function') {
+                window.closeModal('modalInactividad');
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+            detenerCuentaRegresiva();
+        }
+
+        // ── Cuenta regresiva del modal ────────────────────────────────────
+        function formatearCuenta(ms) {
+            const totalSeg = Math.max(0, Math.ceil(ms / 1000));
+            const m = String(Math.floor(totalSeg / 60)).padStart(2, '0');
+            const s = String(totalSeg % 60).padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function iniciarCuentaRegresiva() {
+            cuentaFin = Date.now() + CLOSE_MS;
+            cuenta.textContent = formatearCuenta(CLOSE_MS);
+
+            intervalDisplay = setInterval(() => {
+                const restante = cuentaFin - Date.now();
+                cuenta.textContent = formatearCuenta(restante);
+
+                if (restante <= 0) {
+                    detenerCuentaRegresiva();
+                    formSalida.submit(); // tiempo agotado → registrar salida
+                }
+            }, 1000);
+        }
+
+        function detenerCuentaRegresiva() {
+            clearInterval(intervalDisplay);
+            intervalDisplay = null;
+        }
+
+        // ── Timer principal de inactividad ────────────────────────────────
+        function reiniciarTimer() {
+            clearTimeout(timerInactividad);
+            timerInactividad = setTimeout(mostrarModal, WARN_MS);
+        }
+
+        // ── Eventos que cuentan como "actividad" ──────────────────────────
+        // mousemove se limita a 1 reset cada 5 segundos para no machacar
+        // el clearTimeout/setTimeout en cada píxel de movimiento.
+        let ultimoMousemove = 0;
+        document.addEventListener('mousemove', () => {
+            const ahora = Date.now();
+            if (ahora - ultimoMousemove < 5000) return;
+            ultimoMousemove = ahora;
+            reiniciarTimer();
+        });
+
+        ['keydown', 'mousedown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+            document.addEventListener(evt, reiniciarTimer, { passive: true });
+        });
+
+        // ── Botón "Sigo trabajando" ───────────────────────────────────────
+        btnSigo.addEventListener('click', () => {
+            ocultarModal();
+            reiniciarTimer();
+        });
+
+        // ── Arrancar ──────────────────────────────────────────────────────
+        reiniciarTimer();
+
+    })();

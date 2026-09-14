@@ -163,6 +163,44 @@ class AsistenciaController extends Controller
         return back()->with('success', 'Salida registrada correctamente.');
     }
 
+    /**
+     * Registra la salida cuando el frontend detectó inactividad prolongada
+     * y el usuario no respondió al aviso en el tiempo límite.
+     *
+     * Usa la hora actual, no la hora de corte, porque el usuario pudo haber
+     * dejado de trabajar antes de las 6pm. Si ya pasó el corte automático
+     * (18:01) se usa la hora de fin de jornada para no inflar las horas.
+     */
+    public function registrarSalidaInactividad()
+    {
+        if (!Auth::check()) return redirect('/login');
+
+        $asistencia = Asistencia::where('user_id', Auth::id())
+            ->whereNull('hora_salida')
+            ->where('fecha', now()->toDateString())
+            ->first();
+
+        if (!$asistencia) {
+            return redirect()->route('dashboard');
+        }
+
+        // Si hay una pausa activa, la cerramos primero para no dejar datos colgados.
+        Pausa::where('asistencia_id', $asistencia->id)
+            ->whereNull('fin_pausa')
+            ->update(['fin_pausa' => now()->format('H:i:s')]);
+
+        $horaActual  = now();
+        $corteCarbon = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
+        $horaSalida  = $horaActual->gt($corteCarbon)
+            ? self::HORA_FIN_JORNADA
+            : $horaActual->format('H:i:s');
+
+        $asistencia->update(['hora_salida' => $horaSalida]);
+
+        return redirect()->route('dashboard')
+            ->with('warning', 'Se registró tu salida automáticamente por inactividad.');
+    }
+
     public function iniciarPausa(Request $request)
     {
         if (!Auth::check()) return redirect('/login');

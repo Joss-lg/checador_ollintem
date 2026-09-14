@@ -34,7 +34,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/asistencias-tiempo', [AdminController::class, 'tiempos'])->name('admin.tiempos');
     Route::get('/admin/historial', [HistorialController::class, 'index'])->name('admin.historial');
     Route::get('/admin/historial/reporte/{user}', [ReporteController::class, 'show'])->name('admin.historial.reporte');
-    Route::get('/admin/historial/reporte/{user}/excel', [ReporteController::class, 'exportarExcel'])->name('admin.historial.reporte.excel');
     Route::get('/admin/historial/{asistencia}', [HistorialController::class, 'show'])->name('admin.historial.show');
     Route::get('/admin/reportes/{user}/excel', [ExcelController::class, 'reporteBecario'])->name('admin.reportes.excel');
     Route::get('/admin/reportes/excel/general', [ExcelController::class, 'historialGeneral'])->name('admin.reportes.general.excel');
@@ -68,7 +67,7 @@ Route::post('/entrada', [AsistenciaController::class, 'registrarEntrada'])->name
 Route::post('/salida', [AsistenciaController::class, 'registrarSalida'])->name('salida');
 Route::post('/pausa/iniciar', [AsistenciaController::class, 'iniciarPausa'])->name('pausa.iniciar');
 Route::post('/pausa/finalizar', [AsistenciaController::class, 'finalizarPausa'])->name('pausa.finalizar');
-Route::post('/asistencia', [AsistenciaController::class, 'store'])->name('asistencia.store');
+Route::post('/salida/inactividad', [AsistenciaController::class, 'registrarSalidaInactividad'])->name('salida.inactividad');
 });
 
 // [POLLING DE ROL]: Endpoint ligero para detectar cambios de rol en tiempo real.

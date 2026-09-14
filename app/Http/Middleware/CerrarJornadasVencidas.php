@@ -3,39 +3,49 @@
 namespace App\Http\Middleware;
 
 use App\Models\Asistencia;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Cierra automáticamente las jornadas que se quedaron abiertas pasada la
- * hora de corte (18:00), sin depender de un cron real en el servidor.
+ * hora de corte, sin depender de un cron real en el servidor.
  *
  * En vez de un comando programado que necesita `schedule:run` corriendo
  * cada minuto vía cron/Programador de tareas, este middleware aprovecha
- * el tráfico normal de la app: cada vez que alguien visita el sitio
- * después de las 18:00, revisa (como mucho una vez por minuto, usando
+ * el tráfico normal de la app: cada vez que un usuario autenticado visita
+ * el sitio después del corte, revisa (como mucho una vez por minuto, usando
  * cache) si hay jornadas del día que sigan abiertas y las cierra.
+ *
+ * La hora de corte se lee de config/asistencia.php para que haya un único
+ * lugar donde cambiarla (antes estaba hardcodeada aquí, en AsistenciaController
+ * y en el comando CerrarJornadasAutomaticamente).
  */
 class CerrarJornadasVencidas
 {
-    private const HORA_FIN_JORNADA = '18:00:00';
-
     public function handle(Request $request, Closure $next): Response
     {
-        $this->cerrarJornadasSiCorresponde();
+        // Solo ejecutar si hay una sesión autenticada: evita lanzar el UPDATE
+        // en requests públicos (login, assets, etc.) después de las 18:00.
+        if (Auth::check()) {
+            $this->cerrarJornadasSiCorresponde();
+        }
 
         return $next($request);
     }
 
     private function cerrarJornadasSiCorresponde(): void
     {
-        $ahora = now();
-        $hoy = $ahora->toDateString();
+        $ahora    = now();
+        $hoy      = $ahora->toDateString();
+        $horaCorte = config('asistencia.hora_fin_jornada', '18:00:00');
+        $corte    = Carbon::today()->setTimeFromTimeString($horaCorte);
 
-        // Antes de las 18:00 no hay nada que cerrar todavía.
-        if ($ahora->format('H:i:s') < self::HORA_FIN_JORNADA) {
+        // Comparación real de instancias Carbon, no de strings.
+        if ($ahora->lt($corte)) {
             return;
         }
 
@@ -52,6 +62,6 @@ class CerrarJornadasVencidas
 
         Asistencia::where('fecha', $hoy)
             ->whereNull('hora_salida')
-            ->update(['hora_salida' => self::HORA_FIN_JORNADA]);
+            ->update(['hora_salida' => $horaCorte]);
     }
 }

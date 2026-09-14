@@ -45,6 +45,7 @@
 
 @include('becario.modals.confirmar_descanso')
 @include('becario.modals.finalizar_turno')
+@include('becario.modals.inactividad')
 
 <script>
     window.checadorConfig = {
