@@ -230,8 +230,8 @@
         // ── Configuración de tiempos ──────────────────────────────────────
         // WARN_MS:  inactividad antes de mostrar el aviso     (60 min)
         // CLOSE_MS: cuenta regresiva antes de registrar salida  (5 min)
-        const WARN_MS  = 1 * 60 * 1000;
-        const CLOSE_MS =  1 * 60 * 1000;
+        const WARN_MS  = 60 * 60 * 1000;
+        const CLOSE_MS =  5 * 60 * 1000;
         // ─────────────────────────────────────────────────────────────────
 
         const modal      = document.getElementById('modalInactividad');
