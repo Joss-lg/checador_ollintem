@@ -32,3 +32,4 @@ Thumbs.db
 /storage/framework/views/
 /storage/framework/cache/
 /storage/framework/sessions/
+/package-lock.json
