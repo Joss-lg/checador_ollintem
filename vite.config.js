@@ -5,10 +5,11 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                'resources/sass/app.scss',
-                'resources/js/app.js',
-                'resources/css/becario-dashboard.css',
-            ],
+            'resources/sass/app.scss',
+            'resources/js/app.js',
+            'resources/css/becario-dashboard.css',
+            'resources/js/becario-dashboard.js',  // ← agregar esta línea
+        ],
             refresh: true,
         }),
     ],
