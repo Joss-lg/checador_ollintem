@@ -217,7 +217,10 @@
     // Solo se activa si el estado es 'trabajando' (no en pausa, no al terminar).
     // ==========================================
 
-    (function iniciarDeteccionInactividad() {
+    // El detector de inactividad se inicializa cuando el DOM ya está
+    // completamente cargado. Sin esto, getElementById devuelve null
+    // porque el script corre antes de que el navegador pinte el HTML.
+    document.addEventListener('DOMContentLoaded', function () {
 
         const cfg = window.checadorConfig || {};
 
@@ -225,45 +228,115 @@
         if (cfg.estado !== 'trabajando') return;
 
         // ── Configuración de tiempos ──────────────────────────────────────
-        // WARN_MS:  tiempo de inactividad antes de mostrar el aviso  (45 min)
-        // CLOSE_MS: tiempo de la cuenta regresiva antes de auto-salida (10 min)
-        const WARN_MS  = 60 * 60 * 1000;
-        const CLOSE_MS = 5 * 60 * 1000;
+        // WARN_MS:  inactividad antes de mostrar el aviso     (60 min)
+        // CLOSE_MS: cuenta regresiva antes de registrar salida  (5 min)
+        const WARN_MS  = 1 * 60 * 1000;
+        const CLOSE_MS =  1 * 60 * 1000;
         // ─────────────────────────────────────────────────────────────────
 
-        const modal          = document.getElementById('modalInactividad');
-        const cuenta         = document.getElementById('cuentaRegresivaInactividad');
-        const btnSigo        = document.getElementById('btnSigoTrabajando');
-        const formSalida     = document.getElementById('formSalidaInactividad');
+        const modal      = document.getElementById('modalInactividad');
+        const cuenta     = document.getElementById('cuentaRegresivaInactividad');
+        const btnSigo    = document.getElementById('btnSigoTrabajando');
+        const formSalida = document.getElementById('formSalidaInactividad');
 
-        if (!modal || !cuenta || !btnSigo || !formSalida) return;
+        // Si algún elemento del modal no está en el DOM algo falló en el Blade.
+        if (!modal || !cuenta || !btnSigo || !formSalida) {
+            console.warn('[Inactividad] No se encontraron los elementos del modal. Verifica que @include(\'becario.modals.inactividad\') esté en dashboard.blade.php.');
+            return;
+        }
 
-        let timerInactividad  = null;   // dispara el aviso tras WARN_MS sin actividad
-        let timerCuentaRegres = null;   // cuenta regresiva del modal
-        let intervalDisplay   = null;   // refresca el número en pantalla cada segundo
-        let cuentaFin         = null;   // timestamp en que debe cerrarse la jornada
+        let timerInactividad = null;
+        let intervalDisplay  = null;
+        let cuentaFin        = null;
 
-        // ── Abrir y cerrar modal (reutiliza las funciones ya existentes) ──
-        function mostrarModal() {
-            if (typeof window.openModal === 'function') {
-                window.openModal('modalInactividad');
-            } else {
-                // Fallback por si openModal aún no cargó
-                modal.classList.remove('opacity-0', 'pointer-events-none');
+        // ── Sonido de alerta con Web Audio API ───────────────────────────
+        // No necesita ningún archivo de audio externo: genera el tono
+        // directamente en el navegador. Suena cuando aparece el modal
+        // y cada 30 segundos mientras sigue abierto.
+        //
+        // iOS Safari bloquea el audio hasta que el usuario haya tocado
+        // la pantalla al menos una vez. El truco es crear el AudioContext
+        // en la primera interacción real (touchstart/click) y hacer un
+        // resume() ahí mismo — eso lo "desbloquea" para el resto de la
+        // sesión, incluso cuando el sonido lo dispara un timer sin toque.
+        let audioCtx       = null;
+        let intervalSonido = null;
+
+        function obtenerAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
+            // En iOS el contexto arranca en estado 'suspended' hasta el primer
+            // gesto. resume() es necesario aquí para que los sonidos futuros
+            // (disparados por timer, sin toque) funcionen.
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Desbloquear en cuanto el usuario toque/haga clic por primera vez.
+        function desbloquearAudio() {
+            obtenerAudioCtx();
+            // Una vez desbloqueado no necesitamos seguir escuchando.
+            document.removeEventListener('touchstart', desbloquearAudio);
+            document.removeEventListener('mousedown',  desbloquearAudio);
+        }
+        document.addEventListener('touchstart', desbloquearAudio, { once: true, passive: true });
+        document.addEventListener('mousedown',  desbloquearAudio, { once: true });
+
+        function reproducirAlerta() {
+            try {
+                const ctx = obtenerAudioCtx();
+
+                // Dos pitidos cortos seguidos (bip-bip).
+                [0, 0.25].forEach(offset => {
+                    const osc  = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.type            = 'sine';
+                    osc.frequency.value = 880; // La5 — tono de aviso, no molesto
+
+                    const t = ctx.currentTime + offset;
+                    gain.gain.setValueAtTime(0, t);
+                    gain.gain.linearRampToValueAtTime(0.35, t + 0.01);
+                    gain.gain.linearRampToValueAtTime(0,    t + 0.18);
+
+                    osc.start(t);
+                    osc.stop(t + 0.2);
+                });
+            } catch (e) {
+                console.warn('[Inactividad] Web Audio no disponible:', e);
+            }
+        }
+
+        function iniciarSonidoRepetido() {
+            reproducirAlerta(); // suena al abrir
+            intervalSonido = setInterval(reproducirAlerta, 30_000); // cada 30 seg
+        }
+
+        function detenerSonido() {
+            clearInterval(intervalSonido);
+            intervalSonido = null;
+        }
+
+        // ── Abrir y cerrar modal ──────────────────────────────────────────
+        function mostrarModal() {
+            window.openModal('modalInactividad');
             iniciarCuentaRegresiva();
+            iniciarSonidoRepetido();
         }
 
         function ocultarModal() {
-            if (typeof window.closeModal === 'function') {
-                window.closeModal('modalInactividad');
-            } else {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-            }
+            window.closeModal('modalInactividad');
             detenerCuentaRegresiva();
+            detenerSonido();
         }
 
-        // ── Cuenta regresiva del modal ────────────────────────────────────
+        // ── Cuenta regresiva ──────────────────────────────────────────────
         function formatearCuenta(ms) {
             const totalSeg = Math.max(0, Math.ceil(ms / 1000));
             const m = String(Math.floor(totalSeg / 60)).padStart(2, '0');
@@ -281,7 +354,8 @@
 
                 if (restante <= 0) {
                     detenerCuentaRegresiva();
-                    formSalida.submit(); // tiempo agotado → registrar salida
+                    detenerSonido();
+                    formSalida.submit();
                 }
             }, 1000);
         }
@@ -291,19 +365,18 @@
             intervalDisplay = null;
         }
 
-        // ── Timer principal de inactividad ────────────────────────────────
+        // ── Timer principal ───────────────────────────────────────────────
         function reiniciarTimer() {
             clearTimeout(timerInactividad);
             timerInactividad = setTimeout(mostrarModal, WARN_MS);
         }
 
-        // ── Eventos que cuentan como "actividad" ──────────────────────────
-        // mousemove se limita a 1 reset cada 5 segundos para no machacar
-        // el clearTimeout/setTimeout en cada píxel de movimiento.
+        // ── Eventos de actividad ──────────────────────────────────────────
+        // mousemove tiene throttle de 5 s para no machacar el timer.
         let ultimoMousemove = 0;
         document.addEventListener('mousemove', () => {
             const ahora = Date.now();
-            if (ahora - ultimoMousemove < 5000) return;
+            if (ahora - ultimoMousemove < 5_000) return;
             ultimoMousemove = ahora;
             reiniciarTimer();
         });
@@ -321,4 +394,4 @@
         // ── Arrancar ──────────────────────────────────────────────────────
         reiniciarTimer();
 
-    })();
+    }); // fin DOMContentLoaded
