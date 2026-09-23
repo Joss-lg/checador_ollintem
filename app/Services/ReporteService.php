@@ -44,15 +44,22 @@ class ReporteService
      */
     public function obtenerResumen($asistencias)
     {
+        $jornadaSegundos = 9 * 3600; // 9 horas = jornada normal
+
         $resumen = [
             'jornadas'            => $asistencias->count(),
             'segundos_trabajados' => 0,
             'segundos_pausa'      => 0,
+            'segundos_extra'      => 0,
         ];
 
         foreach ($asistencias as $asistencia) {
-            $resumen['segundos_trabajados'] += $asistencia->tiempoTrabajado();
+            $trabajados = $asistencia->tiempoTrabajado();
+            $resumen['segundos_trabajados'] += $trabajados;
             $resumen['segundos_pausa']      += $asistencia->tiempoPausasSegundos();
+            if ($trabajados > $jornadaSegundos) {
+                $resumen['segundos_extra'] += ($trabajados - $jornadaSegundos);
+            }
         }
 
         $resumen['horas_trabajadas'] = $this->segundosAHoras(
@@ -61,6 +68,10 @@ class ReporteService
 
         $resumen['tiempo_pausa'] = $this->segundosAHoras(
             $resumen['segundos_pausa']
+        );
+
+        $resumen['horas_extra'] = $this->segundosAHoras(
+            $resumen['segundos_extra']
         );
 
         return $resumen;

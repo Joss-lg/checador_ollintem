@@ -11,10 +11,12 @@ use Carbon\Carbon;
 
 class AsistenciaController extends Controller
 {
-    // Ventanas de horario estrictas (9:00 a.m. a 6:00 p.m.)
-    private const HORA_INICIO_JORNADA = '09:00:00';
-    private const HORA_FIN_JORNADA    = '18:00:00';
-    private const HORA_CORTE_AUTO     = '18:01:00';
+    // Los horarios se leen de config/asistencia.php (un solo lugar para
+    // cambiarlos). Si necesitas ajustarlos, edita ese archivo o define
+    // las variables de entorno ASISTENCIA_HORA_INICIO / _FIN / _CORTE_AUTO.
+    private static function horaInicio(): string  { return config('asistencia.hora_inicio_jornada', '09:00:00'); }
+    private static function horaFin(): string     { return config('asistencia.hora_fin_jornada',    '18:00:00'); }
+    private static function horaCorte(): string   { return config('asistencia.hora_corte_auto',     '18:01:00'); }
 
     public function index()
     {
@@ -70,8 +72,8 @@ class AsistenciaController extends Controller
         if (!Auth::check()) return redirect('/login');
 
         $horaActual  = now();
-        $inicioTurno = Carbon::today()->setTimeFromTimeString(self::HORA_INICIO_JORNADA);
-        $finTurno    = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
+        $inicioTurno = Carbon::today()->setTimeFromTimeString(self::horaInicio());
+        $finTurno    = Carbon::today()->setTimeFromTimeString(self::horaFin());
 
         // Restricción: solo se puede registrar entrada dentro del lapso de 9:00 am a 6:00 pm
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
@@ -95,7 +97,7 @@ class AsistenciaController extends Controller
 
             // Si la jornada anterior quedó abierta y cruzó días sin marcar salida dentro del horario, 
             // se le aplica el corte automático a las 18:01:00 de su respectiva fecha.
-            $asistenciaActiva->update(['hora_salida' => self::HORA_FIN_JORNADA]);
+            $asistenciaActiva->update(['hora_salida' => self::horaFin()]);
         }
 
         Asistencia::create([
@@ -112,15 +114,15 @@ class AsistenciaController extends Controller
         if (!Auth::check()) return redirect('/login');
 
         $horaActual      = now();
-        $inicioTurno     = Carbon::today()->setTimeFromTimeString(self::HORA_INICIO_JORNADA);
-        $finTurno        = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
-        $corteAutomatico = Carbon::today()->setTimeFromTimeString(self::HORA_CORTE_AUTO);
+        $inicioTurno     = Carbon::today()->setTimeFromTimeString(self::horaInicio());
+        $finTurno        = Carbon::today()->setTimeFromTimeString(self::horaFin());
+        $corteAutomatico = Carbon::today()->setTimeFromTimeString(self::horaCorte());
 
         // Si son las 6:01 p.m. en adelante, se marca salida automáticamente a las 6:00 p.m. (18:00:00) para turnos abiertos
         if ($horaActual->gte($corteAutomatico)) {
             $actualizados = Asistencia::where('user_id', Auth::id())
                 ->whereNull('hora_salida')
-                ->update(['hora_salida' => self::HORA_FIN_JORNADA]);
+                ->update(['hora_salida' => self::horaFin()]);
 
             if ($actualizados > 0) {
                 return back()->with(
@@ -190,9 +192,9 @@ class AsistenciaController extends Controller
             ->update(['fin_pausa' => now()->format('H:i:s')]);
 
         $horaActual  = now();
-        $corteCarbon = Carbon::today()->setTimeFromTimeString(self::HORA_FIN_JORNADA);
+        $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
         $horaSalida  = $horaActual->gt($corteCarbon)
-            ? self::HORA_FIN_JORNADA
+            ? self::horaFin()
             : $horaActual->format('H:i:s');
 
         $asistencia->update(['hora_salida' => $horaSalida]);

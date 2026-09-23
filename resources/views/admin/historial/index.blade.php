@@ -48,4 +48,23 @@
 
 </div>
 
+@include('admin.historial.components.modal_editar_jornada')
+
+@push('scripts')
+<script>
+    // window.abrirEditarJornada — global para que el onclick del botón
+    // en la tabla la encuentre sin importar el orden de carga del DOM.
+    window.abrirEditarJornada = function (id, nombre, fecha, horaEntrada, horaSalida) {
+        document.getElementById('editarBecarioNombre').textContent = nombre;
+        document.getElementById('editarFecha').textContent         = fecha;
+        document.getElementById('editarHoraEntrada').value         = horaEntrada;
+        document.getElementById('editarHoraSalida').value          = horaSalida;
+        document.getElementById('editarMotivo').value              = '';
+        document.getElementById('formEditarJornada').action        =
+            '/admin/historial/' + id + '/editar-horas';
+        openModal('modalEditarJornada');
+    };
+</script>
+@endpush
+
 @endsection

@@ -19,10 +19,6 @@ class Asistencia extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Hora de corte de jornada (debe coincidir con HORA_FIN_JORNADA en AsistenciaController
-    // y con la hora a la que cierra el comando asistencias:cerrar-automatico).
-    private const HORA_FIN_JORNADA = '18:00:00';
-
     public function tiempoTrabajado()
     {
         if (!$this->hora_entrada) {
@@ -30,19 +26,11 @@ class Asistencia extends Model
         }
         
         $entrada = Carbon::parse($this->fecha . ' ' . $this->hora_entrada);
-
-        if ($this->hora_salida) {
-            $salida = Carbon::parse($this->fecha . ' ' . $this->hora_salida);
-        } else {
-            // Jornada aún abierta: si ya pasamos la hora de corte del día de la
-            // asistencia, no seguimos sumando con now() (eso infla el tiempo
-            // mientras el cierre automático no haya corrido todavía). Topamos
-            // en la hora de corte; si aún no llega, sí usamos la hora actual.
-            $corte = Carbon::parse($this->fecha . ' ' . self::HORA_FIN_JORNADA);
-            $ahora = now();
-            $salida = $ahora->gt($corte) ? $corte : $ahora;
-        }
-
+        
+        $salida = $this->hora_salida
+            ? Carbon::parse($this->fecha . ' ' . $this->hora_salida)
+            : now();
+            
         $totalBruto = $entrada->diffInSeconds($salida);
         $pausas = $this->tiempoPausasSegundos();
         
@@ -80,10 +68,79 @@ class Asistencia extends Model
         return $this->hasMany(Pausa::class, 'asistencia_id');
     }
 
+    /**
+     * Devuelve las horas extra de esta jornada en formato HH:MM:SS.
+     * Se considera jornada normal = 9 horas. Todo lo que pase de eso es extra.
+     * Devuelve "00:00:00" si no hubo horas extra.
+     */
+    public function horasExtrasTotalFormato(): string
+    {
+        $jornadaNormal = 9 * 3600;
+        $trabajado     = $this->tiempoTrabajado();
+        $extra         = max(0, $trabajado - $jornadaNormal);
+
+        $h = floor($extra / 3600);
+        $m = floor(($extra % 3600) / 60);
+        $s = $extra % 60;
+
+        return sprintf('%02d:%02d:%02d', $h, $m, $s);
+    }
+
     public function tienePausaActiva()
     {
         return $this->pausas->contains(function ($pausa) {
             return is_null($pausa->fin_pausa);
+        });
+    }
+
+    /**
+     * Filtra por "semana del mes" (1 a 5), usando el día del mes de `fecha`.
+     * Único lugar donde vive esta regla; antes estaba copiada en
+     * HistorialController, ExcelController y PdfController.
+     */
+    public function scopeFiltrarPorSemana($query, $semana)
+    {
+        if (!$semana) {
+            return $query;
+        }
+
+        return match ((int) $semana) {
+            1 => $query->whereDay('fecha', '>=', 1)->whereDay('fecha', '<=', 7),
+            2 => $query->whereDay('fecha', '>=', 8)->whereDay('fecha', '<=', 14),
+            3 => $query->whereDay('fecha', '>=', 15)->whereDay('fecha', '<=', 21),
+            4 => $query->whereDay('fecha', '>=', 22)->whereDay('fecha', '<=', 28),
+            5 => $query->whereDay('fecha', '>=', 29),
+            default => $query,
+        };
+    }
+
+    /**
+     * Filtra por número de mes (1-12) de `fecha`.
+     */
+    public function scopeFiltrarPorMes($query, $mes)
+    {
+        if (!$mes) {
+            return $query;
+        }
+
+        return $query->whereMonth('fecha', $mes);
+    }
+
+    /**
+     * Filtra asistencias cuyo becario coincide con el término de búsqueda
+     * (nombre o correo). Único lugar donde vive esta regla; antes estaba
+     * repetida como whereHas en HistorialController y como where directo
+     * (tras el join) en ExcelController/PdfController.
+     */
+    public function scopeBuscarBecario($query, $buscar)
+    {
+        if (!$buscar) {
+            return $query;
+        }
+
+        return $query->whereHas('user', function ($q) use ($buscar) {
+            $q->where('name', 'like', "%{$buscar}%")
+              ->orWhere('email', 'like', "%{$buscar}%");
         });
     }
 }

@@ -21,6 +21,27 @@
     <script type="module" src="https://unpkg.com/ionicons@8.0.13/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@8.0.13/dist/ionicons/ionicons.js"></script>
 
+    <script>
+        // openModal y closeModal globales — disponibles para cualquier vista,
+        // incluyendo las que no cargan dashboard.js ni becario-dashboard.js.
+        window.openModal = function (id) {
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if (!el) return;
+            el.classList.remove('opacity-0', 'pointer-events-none');
+            el.classList.add('opacity-100', 'pointer-events-auto');
+            const dialog = el.querySelector('.modal-dialog');
+            if (dialog) dialog.classList.remove('scale-95');
+        };
+        window.closeModal = function (id) {
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if (!el) return;
+            el.classList.add('opacity-0', 'pointer-events-none');
+            el.classList.remove('opacity-100', 'pointer-events-auto');
+            const dialog = el.querySelector('.modal-dialog');
+            if (dialog) dialog.classList.add('scale-95');
+        };
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Checador') }}</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js',])
@@ -179,6 +200,19 @@ window.cerrarToast = function(elemento) {
     @keyframes aurora-drift-1 { 0% { transform: translateX(-5%) translateY(0) rotate(-6deg) scaleY(1); } 50% { transform: translateX(8%) translateY(4%) rotate(3deg) scaleY(1.15); } 100% { transform: translateX(-8%) translateY(-3%) rotate(-3deg) scaleY(1); } }
     @keyframes aurora-drift-2 { 0% { transform: translateX(6%) translateY(2%) rotate(4deg) scaleY(1); } 50% { transform: translateX(-10%) translateY(-4%) rotate(-5deg) scaleY(1.2); } 100% { transform: translateX(5%) translateY(3%) rotate(2deg) scaleY(1); } }
     @keyframes aurora-drift-3 { 0% { transform: translateX(-8%) translateY(-2%) rotate(-4deg) scaleY(1); } 50% { transform: translateX(10%) translateY(5%) rotate(6deg) scaleY(1.1); } 100% { transform: translateX(-6%) translateY(-2%) rotate(-4deg) scaleY(1); } }
+
+    /* Badges de estado del dashboard admin — definidos aquí para que
+       Tailwind no los purgue al estar en JS de public/ */
+    .badge-sin-registrar { background:rgba(100,116,139,0.15); color:#475569; border:1px solid rgba(100,116,139,0.3); }
+    .badge-activo        { background:rgba(34,197,94,0.15);   color:#16a34a; border:1px solid rgba(34,197,94,0.3); }
+    .badge-descanso      { background:rgba(245,158,11,0.15);  color:#d97706; border:1px solid rgba(245,158,11,0.3); }
+    .badge-terminado     { background:rgba(239,68,68,0.15);   color:#dc2626; border:1px solid rgba(239,68,68,0.3); }
+
+    .dark .badge-sin-registrar { background:rgba(100,116,139,0.2);  color:#94a3b8; border-color:rgba(100,116,139,0.35); }
+    .dark .badge-activo        { background:rgba(34,197,94,0.15);   color:#4ade80; border-color:rgba(34,197,94,0.35); }
+    .dark .badge-descanso      { background:rgba(245,158,11,0.15);  color:#fbbf24; border-color:rgba(245,158,11,0.35); }
+    .dark .badge-terminado     { background:rgba(239,68,68,0.15);   color:#f87171; border-color:rgba(239,68,68,0.35); }
 </style>
+@stack('scripts')
 </body>
 </html>

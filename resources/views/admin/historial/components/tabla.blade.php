@@ -19,6 +19,7 @@
                     <th class="px-4 py-3 font-semibold">Pausas</th>
                     <th class="px-4 py-3 font-semibold">Tiempo pausa</th>
                     <th class="px-4 py-3 font-semibold">Tiempo trabajado</th>
+                    <th class="px-4 py-3 font-semibold text-center">Acciones</th>
                 </tr>
             </thead>
 
@@ -56,10 +57,25 @@
                         {{ $asistencia->formatoTiempo($asistencia->tiempoTrabajado()) }}
                     </td>
 
+                    <td class="px-4 py-3 text-center">
+                        <button type="button"
+                                onclick="abrirEditarJornada(
+                                    {{ $asistencia->id }},
+                                    '{{ addslashes($asistencia->user->name) }}',
+                                    '{{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}',
+                                    '{{ $asistencia->hora_entrada ?? '' }}',
+                                    '{{ $asistencia->hora_salida ?? '' }}'
+                                )"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors">
+                            <ion-icon name="create-outline"></ion-icon>
+                            Editar
+                        </button>
+                    </td>
+
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center py-6 text-gray-500 dark:text-gray-400">
+                    <td colspan="7" class="text-center py-6 text-gray-500 dark:text-gray-400">
                         No existen registros.
                     </td>
                 </tr>
@@ -82,9 +98,23 @@
                         <ion-icon name="calendar-outline" class="text-blue-600 dark:text-blue-400"></ion-icon>
                         {{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}
                     </span>
-                    <span class="text-sm font-semibold rounded-md bg-emerald-100 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1">
-                        {{ $asistencia->formatoTiempo($asistencia->tiempoTrabajado()) }}
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold rounded-md bg-emerald-100 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1">
+                            {{ $asistencia->formatoTiempo($asistencia->tiempoTrabajado()) }}
+                        </span>
+                        <button type="button"
+                                onclick="abrirEditarJornada(
+                                    {{ $asistencia->id }},
+                                    '{{ addslashes($asistencia->user->name) }}',
+                                    '{{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}',
+                                    '{{ $asistencia->hora_entrada ?? '' }}',
+                                    '{{ $asistencia->hora_salida ?? '' }}'
+                                )"
+                                class="inline-flex items-center p-1.5 rounded-lg border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                                title="Editar jornada">
+                            <ion-icon name="create-outline"></ion-icon>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Models\Asistencia;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,15 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
-    /**
-     * CAPA DE SEGURIDAD: Validación interna para evitar acceso de no administradores.
-     */
-    private function authorizeAdmin()
-    {
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
-            abort(403, 'Acceso no autorizado.');
-        }
-    }
+    use AuthorizesAdmin;
 
     public function index()
     {
@@ -70,21 +63,6 @@ class AdminController extends Controller
         return back()->with('success', 'Becario registrado correctamente.');
     }
 
-    public function update(Request $request, $id)
-    {
-        $this->authorizeAdmin();
-
-        $request->validate(['name' => 'required', 'role' => 'required']);
-
-        $user = User::findOrFail($id);
-        $user->update([
-            'name' => $request->name,
-            'role' => $request->role,
-        ]);
-
-        return back()->with('success', 'Usuario actualizado con éxito.');
-    }
-
     public function tiempos()
     {
         $this->authorizeAdmin();
@@ -120,7 +98,7 @@ class AdminController extends Controller
                     'en_pausa'            => false,
                     'turno_terminado'     => false,
                     'sin_registro'        => true,
-                    'estado'              => ['texto' => 'Sin registrar', 'clase' => 'bg-gray-800 text-white px-2 py-1 rounded-md'],
+                    'estado'              => ['texto' => 'Sin registrar', 'clase' => 'badge-sin-registrar', 'style' => ''],
                 ];
             }
 
@@ -128,11 +106,11 @@ class AdminController extends Controller
             $turnoTerminado = (bool) $a->hora_salida;
 
             if ($turnoTerminado) {
-                $estado = ['texto' => 'Turno terminado', 'clase' => 'bg-gray-500 text-white px-2 py-1 rounded-md'];
+                $estado = ['texto' => 'Turno terminado', 'clase' => 'badge-terminado', 'style' => ''];
             } elseif ($enPausa) {
-                $estado = ['texto' => 'En descanso', 'clase' => 'bg-sky-500 text-white px-2 py-1 rounded-md'];
+                $estado = ['texto' => 'En descanso',     'clase' => 'badge-descanso',  'style' => ''];
             } else {
-                $estado = ['texto' => 'Activo', 'clase' => 'bg-green-600 text-white px-2 py-1 rounded-md'];
+                $estado = ['texto' => 'Activo',          'clase' => 'badge-activo',    'style' => ''];
             }
 
             return [

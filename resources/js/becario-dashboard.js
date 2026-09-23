@@ -1,4 +1,5 @@
-// --- Helpers genéricos de modal ---
+
+    // --- Helpers genéricos de modal ---
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -395,3 +396,49 @@
         reiniciarTimer();
 
     }); // fin DOMContentLoaded
+
+
+// ============================================================
+// AVISO AL CERRAR LA VENTANA con jornada activa
+// ============================================================
+// Si el becario intenta cerrar la pestaña o el navegador con
+// una jornada en curso, el browser muestra un diálogo nativo
+// de confirmación ("¿Seguro que quieres salir?").
+//
+// LIMITACIÓN CONOCIDA: los navegadores modernos no muestran el
+// mensaje personalizado — siempre muestran el suyo propio, pero
+// sí bloquean el cierre hasta que el usuario confirme.
+// Solo se activa si hay jornada activa (estado 'trabajando' o 'pausado').
+// ============================================================
+(function registrarAvisoSalida() {
+    const cfg = window.checadorConfig || {};
+    if (cfg.estado !== 'trabajando' && cfg.estado !== 'pausado') return;
+
+    window.addEventListener('beforeunload', function (e) {
+        e.preventDefault();
+        // Chrome requiere returnValue para mostrar el diálogo.
+        e.returnValue = 'Tienes una jornada activa. ¿Seguro que quieres cerrar el checador?';
+        return e.returnValue;
+    });
+})();
+
+
+// ============================================================
+// NOTIFICACIONES DEL SISTEMA — permiso al cargar
+// ============================================================
+// El bloque del ping periódico ya usa Notification, pero el
+// permiso se pide en el primer clic. Aquí lo pedimos también
+// en DOMContentLoaded para que en la primera carga salga el
+// diálogo del navegador y el usuario lo autorice de una vez,
+// sin tener que esperar 60 minutos a que llegue el primer ping.
+// ============================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const cfg = window.checadorConfig || {};
+    // Solo pedir si hay jornada activa y el browser soporta notificaciones.
+    if (cfg.estado !== 'trabajando' && cfg.estado !== 'pausado') return;
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+        // Pequeño delay para no chocar con el diálogo de carga de la página.
+        setTimeout(() => Notification.requestPermission(), 2000);
+    }
+});

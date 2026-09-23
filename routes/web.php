@@ -33,6 +33,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/asistencias-tiempo', [AdminController::class, 'tiempos'])->name('admin.tiempos');
     Route::get('/admin/historial', [HistorialController::class, 'index'])->name('admin.historial');
+    Route::patch('/admin/historial/{asistencia}/editar-horas', [HistorialController::class, 'editarHoras'])->name('admin.historial.editar-horas');
     Route::get('/admin/historial/reporte/{user}', [ReporteController::class, 'show'])->name('admin.historial.reporte');
     Route::get('/admin/historial/{asistencia}', [HistorialController::class, 'show'])->name('admin.historial.show');
     Route::get('/admin/reportes/{user}/excel', [ExcelController::class, 'reporteBecario'])->name('admin.reportes.excel');
