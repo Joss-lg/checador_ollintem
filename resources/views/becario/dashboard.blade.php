@@ -53,7 +53,7 @@
         horaEntrada: @json($horaEntrada ?? null),
         pausaInicio: @json($pausaInicio ?? null),
         horaSalida: @json($horaSalida ?? null),
-        segundosPausaAcumulados: {{ (int) ($segundosPausaAcumulados ?? 0) }}
+        segundosPausaAcumulados: {{ (int) ($segundosPausaAcumulados ?? 0) }},
     };
 </script>
 @vite('resources/js/becario-dashboard.js')

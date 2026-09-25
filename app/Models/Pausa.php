@@ -13,48 +13,37 @@ class Pausa extends Model
         'inicio_pausa',
         'fin_pausa',
         'motivo',
-        'fecha'
+        'fecha',
     ];
 
     protected $appends = [
-    'duracion_formato'
-];
-
+        'duracion_formato',
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-
-    // Calcula duración individual de una pausa
     public function duracion()
     {
         if (!$this->inicio_pausa) {
             return 0;
         }
-
         $inicio = Carbon::parse($this->inicio_pausa);
-
-
-        // Si sigue en pausa toma la hora actual
         $fin = $this->fin_pausa
             ? Carbon::parse($this->fin_pausa)
             : now();
-
-
         return $inicio->diffInSeconds($fin);
     }
 
     public function getDuracionFormatoAttribute()
-{
-    return gmdate('H:i:s', $this->duracion());
-}
-  public function asistencia()
-{
-    return $this->belongsTo(
-        Asistencia::class,
-        'asistencia_id'
-    );
-}
+    {
+        return gmdate('H:i:s', $this->duracion());
+    }
+
+    public function asistencia()
+    {
+        return $this->belongsTo(Asistencia::class, 'asistencia_id');
+    }
 }

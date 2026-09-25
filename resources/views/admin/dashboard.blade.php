@@ -39,7 +39,7 @@
 
                     {{-- Tabla (tablet / desktop) --}}
                     <div class="overflow-x-auto hidden md:block">
-                        <table class="w-full text-gray-800 dark:text-white mb-0 align-middle text-center transition-colors" style="min-width: 800px;">
+                        <table class="w-full text-gray-800 dark:text-white mb-0 align-middle text-center transition-colors" style="min-width: 860px;">
                             <thead>
                                 <tr class="text-gray-600 dark:text-gray-400 bg-[#F4F0E6] dark:bg-white/[0.03] border-b border-[#EAE4D8] dark:border-gray-700 transition-colors">
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Becario</th>
@@ -49,11 +49,12 @@
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Pausas</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Tiempo Total</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Estado</th>
+                                    <th class="py-3 font-semibold uppercase text-xs text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-asistencias">
                                 <tr id="tabla-vacia" class="hover:bg-[#F9F6EE] dark:hover:bg-white/5 transition-colors">
-                                    <td colspan="7" class="text-center text-gray-500 dark:text-gray-400 py-10">
+                                    <td colspan="8" class="text-center text-gray-500 dark:text-gray-400 py-10">
                                         <ion-icon name="time-outline" class="text-2xl block mb-2"></ion-icon>
                                         No existen asistencias activas actualmente
                                     </td>
@@ -81,11 +82,13 @@
     </div>
 </div>
 
-{{-- Solo configuración: las rutas Blade no pueden vivir en el .js externo,
-     así que se exponen aquí como datos globales antes de cargar el script. --}}
+@include('admin.modals.forzar-salida')
+
 <script>
     window.RUTAS = {
-        tiempos: "{{ route('admin.tiempos') }}"
+        tiempos:      "{{ route('admin.tiempos') }}",
+        forzarSalida: "{{ url('admin/forzar-salida') }}",  {{-- JS concatena /{id} --}}
+        csrf:         "{{ csrf_token() }}",
     };
 </script>
 <script src="{{ asset('js/admin/dashboard.js') }}" defer></script>

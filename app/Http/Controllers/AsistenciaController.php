@@ -59,10 +59,10 @@ class AsistenciaController extends Controller
         }
 
         return view('becario.dashboard', [
-            'presenter' => new EstadoTurnoPresenter($estado ?? null),
-            'horaEntrada' => $horaEntrada ?? null,
-            'pausaInicio' => $pausaInicio ?? null,
-            'horaSalida' => $horaSalida ?? null,
+            'presenter'               => new EstadoTurnoPresenter($estado ?? null),
+            'horaEntrada'             => $horaEntrada ?? null,
+            'pausaInicio'             => $pausaInicio ?? null,
+            'horaSalida'              => $horaSalida ?? null,
             'segundosPausaAcumulados' => $segundosPausaAcumulados ?? 0,
         ]);
     }
