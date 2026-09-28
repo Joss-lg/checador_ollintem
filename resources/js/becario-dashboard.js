@@ -1,5 +1,4 @@
-
-    // --- Helpers genéricos de modal ---
+// --- Helpers genéricos de modal ---
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -207,195 +206,131 @@
 
     // ==========================================
     // DETECCIÓN DE INACTIVIDAD
-    // ==========================================
-    //
-    // Flujo:
-    //  1. El usuario lleva WARN_MINUTES sin mover el ratón, teclear ni hacer clic.
-    //  2. Se abre el modal de inactividad con una cuenta regresiva de CLOSE_MINUTES.
-    //  3a. Si pulsa "Sigo trabajando" → se cierra el modal y se reinicia el timer.
-    //  3b. Si no responde antes de que llegue a 0 → se envía el form POST /salida/inactividad.
-    //
-    // Solo se activa si el estado es 'trabajando' (no en pausa, no al terminar).
-    // ==========================================
-
-    // El detector de inactividad se inicializa cuando el DOM ya está
-    // completamente cargado. Sin esto, getElementById devuelve null
-    // porque el script corre antes de que el navegador pinte el HTML.
+    // =========================================================================
+    // PING PERIÓDICO + NOTIFICACIÓN DEL SISTEMA
+    // =========================================================================
+    // Pregunta "¿sigues trabajando?" cada 60 min SIN importar si hay actividad
+    // en el navegador — salta igual si estás en VS Code, Word o cualquier app.
+    // =========================================================================
     document.addEventListener('DOMContentLoaded', function () {
 
         const cfg = window.checadorConfig || {};
-
-        // Solo tiene sentido cuando hay jornada activa sin pausa.
         if (cfg.estado !== 'trabajando') return;
 
-        // ── Configuración de tiempos ──────────────────────────────────────
-        // WARN_MS:  inactividad antes de mostrar el aviso     (60 min)
-        // CLOSE_MS: cuenta regresiva antes de registrar salida  (5 min)
-        const WARN_MS  = 60 * 60 * 1000;
+        const PING_MS  = 60 * 60 * 1000;
         const CLOSE_MS =  5 * 60 * 1000;
-        // ─────────────────────────────────────────────────────────────────
 
         const modal      = document.getElementById('modalInactividad');
         const cuenta     = document.getElementById('cuentaRegresivaInactividad');
         const btnSigo    = document.getElementById('btnSigoTrabajando');
         const formSalida = document.getElementById('formSalidaInactividad');
 
-        // Si algún elemento del modal no está en el DOM algo falló en el Blade.
         if (!modal || !cuenta || !btnSigo || !formSalida) {
-            console.warn('[Inactividad] No se encontraron los elementos del modal. Verifica que @include(\'becario.modals.inactividad\') esté en dashboard.blade.php.');
+            console.warn('[Checador] Faltan elementos del modal de inactividad.');
             return;
         }
 
-        let timerInactividad = null;
-        let intervalDisplay  = null;
-        let cuentaFin        = null;
-
-        // ── Sonido de alerta con Web Audio API ───────────────────────────
-        // No necesita ningún archivo de audio externo: genera el tono
-        // directamente en el navegador. Suena cuando aparece el modal
-        // y cada 30 segundos mientras sigue abierto.
-        //
-        // iOS Safari bloquea el audio hasta que el usuario haya tocado
-        // la pantalla al menos una vez. El truco es crear el AudioContext
-        // en la primera interacción real (touchstart/click) y hacer un
-        // resume() ahí mismo — eso lo "desbloquea" para el resto de la
-        // sesión, incluso cuando el sonido lo dispara un timer sin toque.
-        let audioCtx       = null;
+        let pingTimer      = null;
+        let intervalDisplay = null;
+        let cuentaFin      = null;
         let intervalSonido = null;
 
+        // Audio (iOS necesita desbloqueo en primer toque)
+        let audioCtx = null;
         function obtenerAudioCtx() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            // En iOS el contexto arranca en estado 'suspended' hasta el primer
-            // gesto. resume() es necesario aquí para que los sonidos futuros
-            // (disparados por timer, sin toque) funcionen.
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             return audioCtx;
         }
-
-        // Desbloquear en cuanto el usuario toque/haga clic por primera vez.
-        function desbloquearAudio() {
-            obtenerAudioCtx();
-            // Una vez desbloqueado no necesitamos seguir escuchando.
-            document.removeEventListener('touchstart', desbloquearAudio);
-            document.removeEventListener('mousedown',  desbloquearAudio);
-        }
+        function desbloquearAudio() { obtenerAudioCtx(); }
         document.addEventListener('touchstart', desbloquearAudio, { once: true, passive: true });
         document.addEventListener('mousedown',  desbloquearAudio, { once: true });
 
         function reproducirAlerta() {
             try {
                 const ctx = obtenerAudioCtx();
-
-                // Dos pitidos cortos seguidos (bip-bip).
-                [0, 0.25].forEach(offset => {
-                    const osc  = ctx.createOscillator();
-                    const gain = ctx.createGain();
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-
-                    osc.type            = 'sine';
-                    osc.frequency.value = 880; // La5 — tono de aviso, no molesto
-
-                    const t = ctx.currentTime + offset;
+                [0, 0.25].forEach(function(offset) {
+                    var osc = ctx.createOscillator(), gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.type = 'sine'; osc.frequency.value = 880;
+                    var t = ctx.currentTime + offset;
                     gain.gain.setValueAtTime(0, t);
                     gain.gain.linearRampToValueAtTime(0.35, t + 0.01);
                     gain.gain.linearRampToValueAtTime(0,    t + 0.18);
-
-                    osc.start(t);
-                    osc.stop(t + 0.2);
+                    osc.start(t); osc.stop(t + 0.2);
                 });
-            } catch (e) {
-                console.warn('[Inactividad] Web Audio no disponible:', e);
+            } catch(e) { console.warn('[Checador] Web Audio no disponible:', e); }
+        }
+        function iniciarSonidoRepetido() {
+            reproducirAlerta();
+            intervalSonido = setInterval(reproducirAlerta, 30000);
+        }
+        function detenerSonido() { clearInterval(intervalSonido); intervalSonido = null; }
+
+        // Notificación del sistema (aparece aunque el navegador esté minimizado)
+        function pedirPermisoNotificaciones() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
             }
         }
+        setTimeout(pedirPermisoNotificaciones, 2000);
+        document.addEventListener('click',      pedirPermisoNotificaciones, { once: true });
+        document.addEventListener('touchstart', pedirPermisoNotificaciones, { once: true, passive: true });
 
-        function iniciarSonidoRepetido() {
-            reproducirAlerta(); // suena al abrir
-            intervalSonido = setInterval(reproducirAlerta, 30_000); // cada 30 seg
+        function enviarNotificacion() {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            new Notification('Checador — Ollintem', {
+                body: 'Han pasado 60 minutos. Tienes 5 min para confirmar que sigues trabajando.',
+                icon: '/favicon.ico',
+                tag:  'checador-ping',
+                requireInteraction: true,
+            });
         }
 
-        function detenerSonido() {
-            clearInterval(intervalSonido);
-            intervalSonido = null;
-        }
-
-        // ── Abrir y cerrar modal ──────────────────────────────────────────
+        // Abrir / cerrar modal
         function mostrarModal() {
             window.openModal('modalInactividad');
             iniciarCuentaRegresiva();
             iniciarSonidoRepetido();
+            enviarNotificacion();
         }
-
         function ocultarModal() {
             window.closeModal('modalInactividad');
             detenerCuentaRegresiva();
             detenerSonido();
         }
 
-        // ── Cuenta regresiva ──────────────────────────────────────────────
+        // Cuenta regresiva
         function formatearCuenta(ms) {
-            const totalSeg = Math.max(0, Math.ceil(ms / 1000));
-            const m = String(Math.floor(totalSeg / 60)).padStart(2, '0');
-            const s = String(totalSeg % 60).padStart(2, '0');
-            return `${m}:${s}`;
+            var s = Math.max(0, Math.ceil(ms / 1000));
+            return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
         }
-
         function iniciarCuentaRegresiva() {
             cuentaFin = Date.now() + CLOSE_MS;
             cuenta.textContent = formatearCuenta(CLOSE_MS);
-
-            intervalDisplay = setInterval(() => {
-                const restante = cuentaFin - Date.now();
+            intervalDisplay = setInterval(function() {
+                var restante = cuentaFin - Date.now();
                 cuenta.textContent = formatearCuenta(restante);
-
-                if (restante <= 0) {
-                    detenerCuentaRegresiva();
-                    detenerSonido();
-                    formSalida.submit();
-                }
+                if (restante <= 0) { detenerCuentaRegresiva(); detenerSonido(); formSalida.submit(); }
             }, 1000);
         }
+        function detenerCuentaRegresiva() { clearInterval(intervalDisplay); intervalDisplay = null; }
 
-        function detenerCuentaRegresiva() {
-            clearInterval(intervalDisplay);
-            intervalDisplay = null;
+        // Ping periódico fijo — NO depende de eventos de teclado/ratón
+        function programarPing() {
+            clearTimeout(pingTimer);
+            pingTimer = setTimeout(mostrarModal, PING_MS);
         }
 
-        // ── Timer principal ───────────────────────────────────────────────
-        function reiniciarTimer() {
-            clearTimeout(timerInactividad);
-            timerInactividad = setTimeout(mostrarModal, WARN_MS);
-        }
-
-        // ── Eventos de actividad ──────────────────────────────────────────
-        // mousemove tiene throttle de 5 s para no machacar el timer.
-        let ultimoMousemove = 0;
-        document.addEventListener('mousemove', () => {
-            const ahora = Date.now();
-            if (ahora - ultimoMousemove < 5_000) return;
-            ultimoMousemove = ahora;
-            reiniciarTimer();
-        });
-
-        ['keydown', 'mousedown', 'touchstart', 'scroll', 'click'].forEach(evt => {
-            document.addEventListener(evt, reiniciarTimer, { passive: true });
-        });
-
-        // ── Botón "Sigo trabajando" ───────────────────────────────────────
-        btnSigo.addEventListener('click', () => {
+        btnSigo.addEventListener('click', function() {
             ocultarModal();
-            reiniciarTimer();
+            programarPing();
         });
 
-        // ── Arrancar ──────────────────────────────────────────────────────
-        reiniciarTimer();
+        programarPing();
 
     }); // fin DOMContentLoaded
+
 
 
 // ============================================================
@@ -442,3 +377,39 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => Notification.requestPermission(), 2000);
     }
 });
+
+
+// ============================================================
+// POLLING DE ESTADO — detecta si el admin cerró la jornada
+// ============================================================
+// Cada 30 segundos consulta /api/estado-jornada. Si el servidor
+// reporta 'terminado' y el estado local era 'trabajando' o 'pausado',
+// recarga la página para que el becario vea su jornada cerrada.
+// ============================================================
+(function pollingEstadoJornada() {
+    const cfg = window.checadorConfig || {};
+
+    // Solo aplica si hay jornada activa
+    if (cfg.estado !== 'trabajando' && cfg.estado !== 'pausado') return;
+
+    const INTERVALO_MS = 30 * 1000; // cada 30 segundos
+
+    function verificarEstado() {
+        fetch('/api/estado-jornada', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            // Si el servidor dice 'terminado' pero localmente seguíamos activos
+            // significa que el admin forzó la salida — recargar la página.
+            if (data.estado === 'terminado') {
+                window.location.reload();
+            }
+        })
+        .catch(function() {
+            // Error de red — ignorar silenciosamente y reintentar en el siguiente ciclo
+        });
+    }
+
+    setInterval(verificarEstado, INTERVALO_MS);
+})();

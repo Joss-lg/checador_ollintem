@@ -63,3 +63,23 @@ Route::middleware(['auth', 'role:becario'])->group(function () {
 Route::middleware('auth')->get('/api/rol-actual', function () {
     return response()->json(['role' => Auth::user()->role]);
 })->name('api.rol-actual');
+
+// Endpoint ligero para que el becario detecte si su jornada fue cerrada
+// por el admin sin que él haya tocado nada. El dashboard lo consulta cada
+// 30 segundos y recarga la página si el estado cambió.
+Route::middleware(['auth', 'role:becario'])->get('/api/estado-jornada', function () {
+    $asistencia = \App\Models\Asistencia::where('user_id', Auth::id())
+        ->where('fecha', today()->toDateString())
+        ->first();
+
+    if (!$asistencia) {
+        return response()->json(['estado' => 'inactivo']);
+    }
+
+    if ($asistencia->hora_salida) {
+        return response()->json(['estado' => 'terminado']);
+    }
+
+    $enPausa = $asistencia->pausas()->whereNull('fin_pausa')->exists();
+    return response()->json(['estado' => $enPausa ? 'pausado' : 'trabajando']);
+})->name('api.estado-jornada');
