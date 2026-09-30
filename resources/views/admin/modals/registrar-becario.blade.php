@@ -17,7 +17,7 @@
        <div class="shrink-0 flex items-center justify-between px-6 pt-6 pb-4 bg-[#F4F0E6] dark:bg-[#1a1d23]">
             <div class="flex items-center gap-4 min-w-0">
                 <div class="flex items-center justify-center shrink-0 w-11 h-11 rounded-xl bg-blue-100 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-400 text-xl dark:shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-+                  <ion-icon name="person"></ion-icon>
+<ion-icon name="person"></ion-icon>
                 </div>
                 <div class="min-w-0">
                     <h5 class="text-lg font-bold text-gray-900 dark:text-white m-0 truncate">Registrar Nuevo Becario</h5>

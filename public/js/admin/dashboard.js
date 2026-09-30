@@ -7,6 +7,13 @@
     const POLLING_MS = 1750;
     const TICK_MS    = 1000;
 
+    // Siempre lee el token de la meta tag — nunca queda obsoleto aunque
+    // la sesión se refresque o el token rote (Laravel lo rota por request).
+    function csrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : (window.RUTAS.csrf || '');
+    }
+
     // =========================================================================
     // ESTADO EN MEMORIA
     // =========================================================================
@@ -329,42 +336,18 @@
     const modalDialog  = modal ? modal.querySelector('.modal-dialog') : null;
     const btnConfirmar = document.getElementById('btnConfirmarForzarSalida');
     const modalNombre  = document.getElementById('forzarNombreBecario');
-    const toast        = document.getElementById('toastForzarSalida');
-    const toastIcono   = document.getElementById('toastForzarIcono');
-    const toastMensaje = document.getElementById('toastForzarMensaje');
 
     let forzarUserId = null;
-    let toastTimer   = null;
 
     function abrirModal(userId, nombre) {
         forzarUserId            = userId;
         modalNombre.textContent = nombre;
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        modalDialog.classList.remove('scale-95');
-        modalDialog.classList.add('scale-100');
+        window.openModal('modalForzarSalida');
     }
 
     function cerrarModal() {
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        modalDialog.classList.remove('scale-100');
-        modalDialog.classList.add('scale-95');
+        window.closeModal('modalForzarSalida');
         forzarUserId = null;
-    }
-
-    function mostrarToast(ok, mensaje) {
-        clearTimeout(toastTimer);
-        if (ok) {
-            toast.className = 'fixed bottom-5 right-5 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium transition-all duration-300 bg-green-50 dark:bg-green-900/40 border-green-200 dark:border-green-700 text-green-800 dark:text-green-300';
-            toastIcono.setAttribute('name', 'checkmark-circle-outline');
-        } else {
-            toast.className = 'fixed bottom-5 right-5 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium transition-all duration-300 bg-red-50 dark:bg-red-900/40 border-red-200 dark:border-red-700 text-red-800 dark:text-red-300';
-            toastIcono.setAttribute('name', 'alert-circle-outline');
-        }
-        toastMensaje.textContent = mensaje;
-        toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
-        toastTimer = setTimeout(() => {
-            toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
-        }, 3500);
     }
 
     // Abrir modal al hacer clic en el botón de la tabla/tarjeta
@@ -390,16 +373,16 @@
             method:  'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': window.RUTAS.csrf,
+                'X-CSRF-TOKEN': csrfToken(),
             },
         })
         .then(r => r.json())
         .then(res => {
             cerrarModal();
-            mostrarToast(res.ok, res.mensaje);
+            window.mostrarToast(res.ok ? 'success' : 'error', res.ok ? '¡Listo!' : 'Error', res.mensaje);
             if (res.ok) sincronizar();   // refresca la tabla inmediatamente
         })
-        .catch(() => mostrarToast(false, 'Error de red. Intenta de nuevo.'))
+        .catch(() => window.mostrarToast('error', 'Error', 'Error de red. Intenta de nuevo.'))
         .finally(() => { btnConfirmar.disabled = false; });
     });
 

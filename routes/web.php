@@ -12,7 +12,6 @@ use App\Http\Controllers\Reportes\ReporteController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -51,6 +50,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 // =========================================================================
 
 
+// =========================================================================
+// APARTADO BECARIO
+// =========================================================================
 Route::middleware(['auth', 'role:becario'])->group(function () {
     Route::get('/dashboard', [AsistenciaController::class, 'index'])->name('dashboard');
     Route::post('/entrada', [AsistenciaController::class, 'registrarEntrada'])->name('entrada');
@@ -58,28 +60,14 @@ Route::middleware(['auth', 'role:becario'])->group(function () {
     Route::post('/pausa/iniciar', [AsistenciaController::class, 'iniciarPausa'])->name('pausa.iniciar');
     Route::post('/pausa/finalizar', [AsistenciaController::class, 'finalizarPausa'])->name('pausa.finalizar');
     Route::post('/salida/inactividad', [AsistenciaController::class, 'registrarSalidaInactividad'])->name('salida.inactividad');
+
+    // ── Salida involuntaria al cerrar pestaña / navegador ────────────────
+    Route::post('/salida/involuntaria', [AsistenciaController::class, 'registrarSalidaInvoluntaria'])->name('salida.involuntaria');
+
+    // Polling: el becario consulta si su jornada sigue activa.
+    Route::get('/api/estado-jornada', [AsistenciaController::class, 'estadoJornada'])->name('api.estado-jornada');
 });
 
 Route::middleware('auth')->get('/api/rol-actual', function () {
     return response()->json(['role' => Auth::user()->role]);
 })->name('api.rol-actual');
-
-// Endpoint ligero para que el becario detecte si su jornada fue cerrada
-// por el admin sin que él haya tocado nada. El dashboard lo consulta cada
-// 30 segundos y recarga la página si el estado cambió.
-Route::middleware(['auth', 'role:becario'])->get('/api/estado-jornada', function () {
-    $asistencia = \App\Models\Asistencia::where('user_id', Auth::id())
-        ->where('fecha', today()->toDateString())
-        ->first();
-
-    if (!$asistencia) {
-        return response()->json(['estado' => 'inactivo']);
-    }
-
-    if ($asistencia->hora_salida) {
-        return response()->json(['estado' => 'terminado']);
-    }
-
-    $enPausa = $asistencia->pausas()->whereNull('fin_pausa')->exists();
-    return response()->json(['estado' => $enPausa ? 'pausado' : 'trabajando']);
-})->name('api.estado-jornada');

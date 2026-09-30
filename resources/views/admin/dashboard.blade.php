@@ -87,7 +87,7 @@
 <script>
     window.RUTAS = {
         tiempos:      "{{ route('admin.tiempos') }}",
-        forzarSalida: "{{ url('admin/forzar-salida') }}",  {{-- JS concatena /{id} --}}
+        forzarSalida: "{{ url('admin/forzar-salida') }}",
         csrf:         "{{ csrf_token() }}",
     };
 </script>

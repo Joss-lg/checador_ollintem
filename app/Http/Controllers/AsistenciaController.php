@@ -11,9 +11,6 @@ use Carbon\Carbon;
 
 class AsistenciaController extends Controller
 {
-    // Los horarios se leen de config/asistencia.php (un solo lugar para
-    // cambiarlos). Si necesitas ajustarlos, edita ese archivo o define
-    // las variables de entorno ASISTENCIA_HORA_INICIO / _FIN / _CORTE_AUTO.
     private static function horaInicio(): string  { return config('asistencia.hora_inicio_jornada', '09:00:00'); }
     private static function horaFin(): string     { return config('asistencia.hora_fin_jornada',    '18:00:00'); }
     private static function horaCorte(): string   { return config('asistencia.hora_corte_auto',     '18:01:00'); }
@@ -75,15 +72,13 @@ class AsistenciaController extends Controller
         $inicioTurno = Carbon::today()->setTimeFromTimeString(self::horaInicio());
         $finTurno    = Carbon::today()->setTimeFromTimeString(self::horaFin());
 
-        // Restricción: solo se puede registrar entrada dentro del lapso de 9:00 am a 6:00 pm
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'El registro de entrada solo está permitido estrictamente entre las 9:00 a.m. y las 6:00 p.m.'
+                'El registro de entrada solo está permitido strictly entre las 9:00 a.m. y las 6:00 p.m.'
             );
         }
 
-        // Buscar si existe una jornada activa previa
         $asistenciaActiva = Asistencia::where('user_id', Auth::id())
             ->whereNull('hora_salida')
             ->first();
@@ -95,8 +90,6 @@ class AsistenciaController extends Controller
                 return back()->with('error', 'Ya cuentas con un registro de entrada activo para el día de hoy.');
             }
 
-            // Si la jornada anterior quedó abierta y cruzó días sin marcar salida dentro del horario, 
-            // se le aplica el corte automático a las 18:01:00 de su respectiva fecha.
             $asistenciaActiva->update(['hora_salida' => self::horaFin()]);
         }
 
@@ -118,7 +111,6 @@ class AsistenciaController extends Controller
         $finTurno        = Carbon::today()->setTimeFromTimeString(self::horaFin());
         $corteAutomatico = Carbon::today()->setTimeFromTimeString(self::horaCorte());
 
-        // Si son las 6:01 p.m. en adelante, se marca salida automáticamente a las 6:00 p.m. (18:00:00) para turnos abiertos
         if ($horaActual->gte($corteAutomatico)) {
             $actualizados = Asistencia::where('user_id', Auth::id())
                 ->whereNull('hora_salida')
@@ -132,11 +124,10 @@ class AsistenciaController extends Controller
             }
         }
 
-        // Restricción estricta de salida: debe ser de 9:00 am a 6:00 pm
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'El registro de salida debe realizarse estrictamente entre las 9:00 a.m. y las 6:00 p.m.'
+                'El registro de salida debe realizarse strictly entre las 9:00 a.m. y las 6:00 p.m.'
             );
         }
 
@@ -157,7 +148,6 @@ class AsistenciaController extends Controller
             return back()->with('error', 'Primero debes finalizar tu pausa activa antes de registrar salida.');
         }
 
-        // Registrar la salida con la hora exacta dentro del rango permitido
         $asistencia->update([
             'hora_salida' => $horaActual->format('H:i:s')
         ]);
@@ -165,14 +155,6 @@ class AsistenciaController extends Controller
         return back()->with('success', 'Salida registrada correctamente.');
     }
 
-    /**
-     * Registra la salida cuando el frontend detectó inactividad prolongada
-     * y el usuario no respondió al aviso en el tiempo límite.
-     *
-     * Usa la hora actual, no la hora de corte, porque el usuario pudo haber
-     * dejado de trabajar antes de las 6pm. Si ya pasó el corte automático
-     * (18:01) se usa la hora de fin de jornada para no inflar las horas.
-     */
     public function registrarSalidaInactividad()
     {
         if (!Auth::check()) return redirect('/login');
@@ -186,7 +168,6 @@ class AsistenciaController extends Controller
             return redirect()->route('dashboard');
         }
 
-        // Si hay una pausa activa, la cerramos primero para no dejar datos colgados.
         Pausa::where('asistencia_id', $asistencia->id)
             ->whereNull('fin_pausa')
             ->update(['fin_pausa' => now()->format('H:i:s')]);
@@ -201,6 +182,44 @@ class AsistenciaController extends Controller
 
         return redirect()->route('dashboard')
             ->with('warning', 'Se registró tu salida automáticamente por inactividad.');
+    }
+
+    /**
+     * Registra la salida automática cuando el becario cierra la pestaña o el navegador.
+     * Soporta sesión activa o user_id recibido vía sendBeacon.
+     */
+    public function registrarSalidaInvoluntaria(Request $request)
+    {
+        $userId = Auth::id() ?? $request->input('user_id');
+
+        if (!$userId) {
+            return response()->json(['status' => 'unauthorized'], 401);
+        }
+
+        $asistencia = Asistencia::where('user_id', $userId)
+            ->whereNull('hora_salida')
+            ->where('fecha', now()->toDateString())
+            ->first();
+
+        if (!$asistencia) {
+            return response()->json(['status' => 'no_active_session'], 200);
+        }
+
+        // Si hay una pausa activa la cerramos
+        Pausa::where('asistencia_id', $asistencia->id)
+            ->whereNull('fin_pausa')
+            ->update(['fin_pausa' => now()->format('H:i:s')]);
+
+        $horaActual  = now();
+        $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
+
+        $horaSalida = $horaActual->gt($corteCarbon)
+            ? self::horaFin()
+            : $horaActual->format('H:i:s');
+
+        $asistencia->update(['hora_salida' => $horaSalida]);
+
+        return response()->json(['status' => 'success', 'hora_salida' => $horaSalida]);
     }
 
     public function iniciarPausa(Request $request)
@@ -254,5 +273,51 @@ class AsistenciaController extends Controller
         ]);
 
         return back()->with('success', 'Pausa finalizada correctamente.');
+    }
+
+    public function estadoJornada()
+    {
+        $asistencia = Asistencia::where('user_id', Auth::id())
+            ->where('fecha', today()->toDateString())
+            ->latest()
+            ->first();
+
+        if (!$asistencia) {
+            return response()->json(['terminado' => false, 'pausaExcedida' => false]);
+        }
+
+        if ($asistencia->hora_salida) {
+            return response()->json(['terminado' => true, 'pausaExcedida' => false]);
+        }
+
+        $pausaActiva = Pausa::where('asistencia_id', $asistencia->id)
+            ->whereNull('fin_pausa')
+            ->latest()
+            ->first();
+
+        $pausaExcedida = false;
+
+        if ($pausaActiva) {
+            $minutosPausa = Carbon::parse($pausaActiva->inicio_pausa)->diffInMinutes(now());
+
+            if ($minutosPausa >= 60) {
+                $pausaExcedida = true;
+
+                $pausaActiva->update(['fin_pausa' => now()->format('H:i:s')]);
+
+                $horaActual  = now();
+                $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
+                $horaSalida  = $horaActual->gt($corteCarbon)
+                    ? self::horaFin()
+                    : $horaActual->format('H:i:s');
+
+                $asistencia->update(['hora_salida' => $horaSalida]);
+            }
+        }
+
+        return response()->json([
+            'terminado'     => $pausaExcedida,
+            'pausaExcedida' => $pausaExcedida,
+        ]);
     }
 }

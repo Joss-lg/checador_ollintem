@@ -65,10 +65,3 @@
     </div>
 </div>
 
-{{-- Toast de resultado --}}
-<div id="toastForzarSalida"
-     class="fixed bottom-5 right-5 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium opacity-0 pointer-events-none transition-all duration-300 translate-y-2"
-     role="alert">
-    <ion-icon id="toastForzarIcono" name="checkmark-circle-outline" class="text-xl flex-shrink-0"></ion-icon>
-    <span id="toastForzarMensaje"></span>
-</div>

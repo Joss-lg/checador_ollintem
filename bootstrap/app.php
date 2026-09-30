@@ -12,6 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Excluir la ruta de salida involuntaria del chequeo CSRF para sendBeacon
+        $middleware->validateCsrfTokens(except: [
+            'salida/involuntaria',
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserRole::class,
         ]);

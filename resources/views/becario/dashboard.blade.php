@@ -50,6 +50,7 @@
 <script>
     window.checadorConfig = {
         estado: @json($presenter->estado),
+        userId: @json(auth()->id()), {{-- <-- LÍNEA AGREGADA --}}
         horaEntrada: @json($horaEntrada ?? null),
         pausaInicio: @json($pausaInicio ?? null),
         horaSalida: @json($horaSalida ?? null),

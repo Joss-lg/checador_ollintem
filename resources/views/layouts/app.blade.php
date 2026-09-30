@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="icon" href="{{ asset('images/isotipo.webp') }}" type="image/webp">
 
@@ -22,24 +23,62 @@
     <script nomodule src="https://unpkg.com/ionicons@8.0.13/dist/ionicons/ionicons.js"></script>
 
     <script>
-        // openModal y closeModal globales — disponibles para cualquier vista,
-        // incluyendo las que no cargan dashboard.js ni becario-dashboard.js.
+        // ================================================================
+        // SISTEMA GLOBAL DE MODALES
+        // Disponible en TODAS las vistas (admin y becario).
+        // Maneja: abrir, cerrar, btn-close-modal, click fuera, Escape.
+        // ================================================================
+
         window.openModal = function (id) {
             const el = typeof id === 'string' ? document.getElementById(id) : id;
             if (!el) return;
             el.classList.remove('opacity-0', 'pointer-events-none');
             el.classList.add('opacity-100', 'pointer-events-auto');
             const dialog = el.querySelector('.modal-dialog');
-            if (dialog) dialog.classList.remove('scale-95');
+            if (dialog) {
+                dialog.classList.remove('scale-95');
+                dialog.classList.add('scale-100');
+            }
         };
+
         window.closeModal = function (id) {
             const el = typeof id === 'string' ? document.getElementById(id) : id;
             if (!el) return;
             el.classList.add('opacity-0', 'pointer-events-none');
             el.classList.remove('opacity-100', 'pointer-events-auto');
             const dialog = el.querySelector('.modal-dialog');
-            if (dialog) dialog.classList.add('scale-95');
+            if (dialog) {
+                dialog.classList.remove('scale-100');
+                dialog.classList.add('scale-95');
+            }
         };
+
+        // Inicializar listeners una vez que el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // 1. Botones con clase btn-close-modal — cierran el modal padre
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('.btn-close-modal');
+                if (!btn) return;
+                const modal = btn.closest('[role="dialog"]');
+                if (modal) window.closeModal(modal);
+            });
+
+            // 2. Click en el fondo oscuro (fuera del dialog) — cierra el modal
+            document.addEventListener('mousedown', function (e) {
+                if (!e.target.matches('[role="dialog"]')) return;
+                window.closeModal(e.target);
+            });
+
+            // 3. Tecla Escape — cierra cualquier modal abierto
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== 'Escape') return;
+                document.querySelectorAll('[role="dialog"]:not(.opacity-0)').forEach(function (modal) {
+                    window.closeModal(modal);
+                });
+            });
+
+        });
     </script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
