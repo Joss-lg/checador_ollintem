@@ -61,6 +61,7 @@ class AsistenciaController extends Controller
             'pausaInicio'             => $pausaInicio ?? null,
             'horaSalida'              => $horaSalida ?? null,
             'segundosPausaAcumulados' => $segundosPausaAcumulados ?? 0,
+            'userId'                  => Auth::id(),
         ]);
     }
 
@@ -75,7 +76,7 @@ class AsistenciaController extends Controller
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'El registro de entrada solo está permitido strictly entre las 9:00 a.m. y las 6:00 p.m.'
+                'El registro de entrada solo está permitido entre las 9:00 a.m. y las 6:00 p.m.'
             );
         }
 
@@ -127,7 +128,7 @@ class AsistenciaController extends Controller
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'El registro de salida debe realizarse strictly entre las 9:00 a.m. y las 6:00 p.m.'
+                'El registro de salida debe realizarse entre las 9:00 a.m. y las 6:00 p.m.'
             );
         }
 
@@ -303,15 +304,21 @@ class AsistenciaController extends Controller
             if ($minutosPausa >= 60) {
                 $pausaExcedida = true;
 
-                $pausaActiva->update(['fin_pausa' => now()->format('H:i:s')]);
+                // Idempotente: solo actuar si la jornada sigue abierta
+                // (el polling puede llamar aquí varias veces antes de que
+                // el becario recargue la página)
+                $asistencia->refresh();
+                if (!$asistencia->hora_salida) {
+                    $pausaActiva->update(['fin_pausa' => now()->format('H:i:s')]);
 
-                $horaActual  = now();
-                $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
-                $horaSalida  = $horaActual->gt($corteCarbon)
-                    ? self::horaFin()
-                    : $horaActual->format('H:i:s');
+                    $horaActual  = now();
+                    $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
+                    $horaSalida  = $horaActual->gt($corteCarbon)
+                        ? self::horaFin()
+                        : $horaActual->format('H:i:s');
 
-                $asistencia->update(['hora_salida' => $horaSalida]);
+                    $asistencia->update(['hora_salida' => $horaSalida]);
+                }
             }
         }
 

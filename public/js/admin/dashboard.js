@@ -7,13 +7,6 @@
     const POLLING_MS = 1750;
     const TICK_MS    = 1000;
 
-    // Siempre lee el token de la meta tag — nunca queda obsoleto aunque
-    // la sesión se refresque o el token rote (Laravel lo rota por request).
-    function csrfToken() {
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        return meta ? meta.getAttribute('content') : (window.RUTAS.csrf || '');
-    }
-
     // =========================================================================
     // ESTADO EN MEMORIA
     // =========================================================================
@@ -94,22 +87,22 @@
             </td>
             <td class="py-3 text-center">${a.fecha}</td>
             <td class="py-3 text-center">
-                <span id="entrada-${a.user_id}" class="inline-flex items-center rounded-full bg-green-500/25 text-green-400 px-3 py-2 text-sm font-medium">
+                <span id="entrada-${a.user_id}" class="badge-tiempo badge-entrada">
                     <i class="bi bi-box-arrow-in-right mr-1"></i>${a.hora_entrada}
                 </span>
             </td>
             <td class="py-3 text-center">
-                <span id="salida-${a.user_id}" class="inline-flex items-center rounded-full bg-red-500/25 text-red-400 px-3 py-2 text-sm font-medium">
+                <span id="salida-${a.user_id}" class="badge-tiempo badge-salida">
                     <i class="bi bi-box-arrow-left mr-1"></i>${a.hora_salida}
                 </span>
             </td>
             <td class="py-3 text-center">
-                <span id="pausas-${a.user_id}" class="inline-flex items-center rounded-full bg-yellow-500/25 text-yellow-400 px-3 py-2 text-sm font-medium">
+                <span id="pausas-${a.user_id}" class="badge-tiempo badge-pausa">
                     <i class="bi bi-cup-hot mr-1"></i>${formatoHMS(a.pausas_segundos)}
                 </span>
             </td>
             <td class="py-3 text-center">
-                <span id="trabajado-${a.user_id}" class="inline-flex items-center rounded-full bg-cyan-500/25 text-cyan-400 px-3 py-2 text-sm font-medium">
+                <span id="trabajado-${a.user_id}" class="badge-tiempo badge-trabajado">
                     <i class="bi bi-stopwatch mr-1"></i>${formatoHMS(a.trabajado_segundos)}
                 </span>
             </td>
@@ -336,18 +329,42 @@
     const modalDialog  = modal ? modal.querySelector('.modal-dialog') : null;
     const btnConfirmar = document.getElementById('btnConfirmarForzarSalida');
     const modalNombre  = document.getElementById('forzarNombreBecario');
+    const toast        = document.getElementById('toastForzarSalida');
+    const toastIcono   = document.getElementById('toastForzarIcono');
+    const toastMensaje = document.getElementById('toastForzarMensaje');
 
     let forzarUserId = null;
+    let toastTimer   = null;
 
     function abrirModal(userId, nombre) {
         forzarUserId            = userId;
         modalNombre.textContent = nombre;
-        window.openModal('modalForzarSalida');
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modalDialog.classList.remove('scale-95');
+        modalDialog.classList.add('scale-100');
     }
 
     function cerrarModal() {
-        window.closeModal('modalForzarSalida');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modalDialog.classList.remove('scale-100');
+        modalDialog.classList.add('scale-95');
         forzarUserId = null;
+    }
+
+    function mostrarToast(ok, mensaje) {
+        clearTimeout(toastTimer);
+        if (ok) {
+            toast.className = 'fixed bottom-5 right-5 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium transition-all duration-300 bg-green-50 dark:bg-green-900/40 border-green-200 dark:border-green-700 text-green-800 dark:text-green-300';
+            toastIcono.setAttribute('name', 'checkmark-circle-outline');
+        } else {
+            toast.className = 'fixed bottom-5 right-5 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium transition-all duration-300 bg-red-50 dark:bg-red-900/40 border-red-200 dark:border-red-700 text-red-800 dark:text-red-300';
+            toastIcono.setAttribute('name', 'alert-circle-outline');
+        }
+        toastMensaje.textContent = mensaje;
+        toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+        toastTimer = setTimeout(() => {
+            toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+        }, 3500);
     }
 
     // Abrir modal al hacer clic en el botón de la tabla/tarjeta
@@ -373,16 +390,16 @@
             method:  'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken(),
+                'X-CSRF-TOKEN': window.RUTAS.csrf,
             },
         })
         .then(r => r.json())
         .then(res => {
             cerrarModal();
-            window.mostrarToast(res.ok ? 'success' : 'error', res.ok ? '¡Listo!' : 'Error', res.mensaje);
+            mostrarToast(res.ok, res.mensaje);
             if (res.ok) sincronizar();   // refresca la tabla inmediatamente
         })
-        .catch(() => window.mostrarToast('error', 'Error', 'Error de red. Intenta de nuevo.'))
+        .catch(() => mostrarToast(false, 'Error de red. Intenta de nuevo.'))
         .finally(() => { btnConfirmar.disabled = false; });
     });
 

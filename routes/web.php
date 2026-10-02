@@ -61,8 +61,7 @@ Route::middleware(['auth', 'role:becario'])->group(function () {
     Route::post('/pausa/finalizar', [AsistenciaController::class, 'finalizarPausa'])->name('pausa.finalizar');
     Route::post('/salida/inactividad', [AsistenciaController::class, 'registrarSalidaInactividad'])->name('salida.inactividad');
 
-    // ── Salida involuntaria al cerrar pestaña / navegador ────────────────
-    Route::post('/salida/involuntaria', [AsistenciaController::class, 'registrarSalidaInvoluntaria'])->name('salida.involuntaria');
+    // salida.involuntaria se mueve fuera del grupo (ver abajo)
 
     // Polling: el becario consulta si su jornada sigue activa.
     Route::get('/api/estado-jornada', [AsistenciaController::class, 'estadoJornada'])->name('api.estado-jornada');
@@ -71,3 +70,10 @@ Route::middleware(['auth', 'role:becario'])->group(function () {
 Route::middleware('auth')->get('/api/rol-actual', function () {
     return response()->json(['role' => Auth::user()->role]);
 })->name('api.rol-actual');
+
+// Salida involuntaria — FUERA del grupo auth/role porque sendBeacon no
+// garantiza mandar cookies de sesión. Se valida con user_id + verificación
+// en BD en vez de Auth::id().
+Route::post('/salida/involuntaria', [AsistenciaController::class, 'registrarSalidaInvoluntaria'])
+    ->name('salida.involuntaria')
+    ->withoutMiddleware(['auth', 'role:becario']);

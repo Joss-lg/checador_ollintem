@@ -2,7 +2,6 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="icon" href="{{ asset('images/isotipo.webp') }}" type="image/webp">
 
@@ -23,62 +22,24 @@
     <script nomodule src="https://unpkg.com/ionicons@8.0.13/dist/ionicons/ionicons.js"></script>
 
     <script>
-        // ================================================================
-        // SISTEMA GLOBAL DE MODALES
-        // Disponible en TODAS las vistas (admin y becario).
-        // Maneja: abrir, cerrar, btn-close-modal, click fuera, Escape.
-        // ================================================================
-
+        // openModal y closeModal globales — disponibles para cualquier vista,
+        // incluyendo las que no cargan dashboard.js ni becario-dashboard.js.
         window.openModal = function (id) {
             const el = typeof id === 'string' ? document.getElementById(id) : id;
             if (!el) return;
             el.classList.remove('opacity-0', 'pointer-events-none');
             el.classList.add('opacity-100', 'pointer-events-auto');
             const dialog = el.querySelector('.modal-dialog');
-            if (dialog) {
-                dialog.classList.remove('scale-95');
-                dialog.classList.add('scale-100');
-            }
+            if (dialog) dialog.classList.remove('scale-95');
         };
-
         window.closeModal = function (id) {
             const el = typeof id === 'string' ? document.getElementById(id) : id;
             if (!el) return;
             el.classList.add('opacity-0', 'pointer-events-none');
             el.classList.remove('opacity-100', 'pointer-events-auto');
             const dialog = el.querySelector('.modal-dialog');
-            if (dialog) {
-                dialog.classList.remove('scale-100');
-                dialog.classList.add('scale-95');
-            }
+            if (dialog) dialog.classList.add('scale-95');
         };
-
-        // Inicializar listeners una vez que el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function () {
-
-            // 1. Botones con clase btn-close-modal — cierran el modal padre
-            document.addEventListener('click', function (e) {
-                const btn = e.target.closest('.btn-close-modal');
-                if (!btn) return;
-                const modal = btn.closest('[role="dialog"]');
-                if (modal) window.closeModal(modal);
-            });
-
-            // 2. Click en el fondo oscuro (fuera del dialog) — cierra el modal
-            document.addEventListener('mousedown', function (e) {
-                if (!e.target.matches('[role="dialog"]')) return;
-                window.closeModal(e.target);
-            });
-
-            // 3. Tecla Escape — cierra cualquier modal abierto
-            document.addEventListener('keydown', function (e) {
-                if (e.key !== 'Escape') return;
-                document.querySelectorAll('[role="dialog"]:not(.opacity-0)').forEach(function (modal) {
-                    window.closeModal(modal);
-                });
-            });
-
-        });
     </script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -251,6 +212,18 @@ window.cerrarToast = function(elemento) {
     .dark .badge-activo        { background:rgba(34,197,94,0.15);   color:#4ade80; border-color:rgba(34,197,94,0.35); }
     .dark .badge-descanso      { background:rgba(245,158,11,0.15);  color:#fbbf24; border-color:rgba(245,158,11,0.35); }
     .dark .badge-terminado     { background:rgba(239,68,68,0.15);   color:#f87171; border-color:rgba(239,68,68,0.35); }
+
+    /* Badges de hora en la tabla del dashboard admin */
+    .badge-tiempo   { display:inline-flex; align-items:center; border-radius:9999px; padding:0.375rem 0.75rem; font-size:0.875rem; font-weight:500; border:1px solid transparent; }
+    .badge-entrada  { background:rgba(34,197,94,0.12);  color:#15803d; border-color:rgba(34,197,94,0.25); }
+    .badge-salida   { background:rgba(239,68,68,0.12);  color:#b91c1c; border-color:rgba(239,68,68,0.25); }
+    .badge-pausa    { background:rgba(245,158,11,0.12); color:#b45309; border-color:rgba(245,158,11,0.25); }
+    .badge-trabajado{ background:rgba(6,182,212,0.12);  color:#0e7490; border-color:rgba(6,182,212,0.25); }
+
+    .dark .badge-entrada  { background:rgba(34,197,94,0.2);  color:#4ade80; border-color:rgba(34,197,94,0.3); }
+    .dark .badge-salida   { background:rgba(239,68,68,0.2);  color:#f87171; border-color:rgba(239,68,68,0.3); }
+    .dark .badge-pausa    { background:rgba(245,158,11,0.2); color:#fbbf24; border-color:rgba(245,158,11,0.3); }
+    .dark .badge-trabajado{ background:rgba(6,182,212,0.2);  color:#22d3ee; border-color:rgba(6,182,212,0.3); }
 </style>
 @stack('scripts')
 </body>

@@ -12,21 +12,21 @@
 
     <div class="grid grid-cols-3 gap-3 mb-4">
 
-        <div class="bg-white dark:bg-gray-900 border border-[#EAE4D8] dark:border-gray-700 shadow-lg rounded-2xl h-full transition-colors">
+        <div class="bg-white dark:bg-[#15181d] border border-[#EAE4D8] dark:border-white/10 shadow-lg rounded-2xl h-full transition-colors">
             <div class="px-2 sm:px-3 py-2 sm:py-3 text-center">
                 <div class="text-gray-500 dark:text-gray-400 text-[0.68rem] sm:text-sm">Becarios Activos</div>
                 <h2 id="card-activos" class="text-green-600 dark:text-green-500 font-bold mb-0 text-lg sm:text-2xl">0</h2>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-900 border border-[#EAE4D8] dark:border-gray-700 shadow-lg rounded-2xl h-full transition-colors">
+        <div class="bg-white dark:bg-[#15181d] border border-[#EAE4D8] dark:border-white/10 shadow-lg rounded-2xl h-full transition-colors">
             <div class="px-2 sm:px-3 py-2 sm:py-3 text-center">
                 <div class="text-gray-500 dark:text-gray-400 text-[0.68rem] sm:text-sm">En Descanso</div>
                 <h2 id="card-descanso" class="text-blue-600 dark:text-cyan-400 font-bold mb-0 text-lg sm:text-2xl">0</h2>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-900 border border-[#EAE4D8] dark:border-gray-700 shadow-lg rounded-2xl h-full transition-colors">
+        <div class="bg-white dark:bg-[#15181d] border border-[#EAE4D8] dark:border-white/10 shadow-lg rounded-2xl h-full transition-colors">
             <div class="px-2 sm:px-3 py-2 sm:py-3 text-center">
                 <div class="text-gray-500 dark:text-gray-400 text-[0.68rem] sm:text-sm">Turnos Finalizados</div>
                 <h2 id="card-finalizados" class="text-yellow-600 dark:text-yellow-400 font-bold mb-0 text-lg sm:text-2xl">0</h2>
@@ -34,14 +34,14 @@
         </div>
 
         <div class="col-span-3">
-            <div class="bg-white dark:bg-gray-900 border border-[#EAE4D8] dark:border-gray-700 shadow-xl rounded-2xl transition-colors">
+            <div class="bg-white dark:bg-[#15181d] border border-[#EAE4D8] dark:border-white/10 shadow-xl rounded-2xl transition-colors">
                 <div class="p-0 overflow-hidden">
 
                     {{-- Tabla (tablet / desktop) --}}
                     <div class="overflow-x-auto hidden md:block">
                         <table class="w-full text-gray-800 dark:text-white mb-0 align-middle text-center transition-colors" style="min-width: 860px;">
                             <thead>
-                                <tr class="text-gray-600 dark:text-gray-400 bg-[#F4F0E6] dark:bg-white/[0.03] border-b border-[#EAE4D8] dark:border-gray-700 transition-colors">
+                                <tr class="text-gray-600 dark:text-gray-400 bg-[#F4F0E6] dark:bg-white/[0.03] border-b border-[#EAE4D8] dark:border-white/10 transition-colors">
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Becario</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Fecha</th>
                                     <th class="py-3 font-semibold uppercase text-xs text-center">Entrada</th>
@@ -71,7 +71,7 @@
                         </p>
                     </div>
 
-                    <div class="hidden md:block lg:hidden text-center text-gray-500 dark:text-gray-400 text-xs py-2 border-t border-[#EAE4D8] dark:border-gray-700 bg-[#F4F0E6] dark:bg-white/[0.02] transition-colors">
+                    <div class="hidden md:block lg:hidden text-center text-gray-500 dark:text-gray-400 text-xs py-2 border-t border-[#EAE4D8] dark:border-white/10 bg-[#F4F0E6] dark:bg-white/[0.02] transition-colors">
                         <i class="bi bi-arrow-left-right mr-1"></i>Desliza para ver toda la tabla
                     </div>
 

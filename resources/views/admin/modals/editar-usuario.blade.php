@@ -18,9 +18,9 @@
                 </div>
             </div>
 
-            <button type="button" class="btn-close-modal shrink-0 text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-white dark:hover:bg-white/10 rounded-lg p-1.5 -mr-1.5 transition-colors" aria-label="Cerrar">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+        <button type="button" onclick="closeModal('modalEditarUsuario')" class="shrink-0 text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-white dark:hover:bg-white/10 rounded-lg p-1.5 -mr-1.5 transition-colors" aria-label="Cerrar">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
         </div>
 
         <div class="shrink-0 h-px bg-[#EAE4D8] dark:bg-white/[0.08]"></div>
@@ -113,9 +113,9 @@
             </div>
 
             <div class="shrink-0 flex flex-col-reverse sm:flex-row justify-end gap-3 px-6 py-4 bg-[#F4F0E6] dark:bg-white/[0.03] border-t border-[#EAE4D8] dark:border-white/[0.08]">
-                <button type="button" class="btn-close-modal w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 border border-[#EAE4D8] dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 dark:hover:text-white transition-colors focus:outline-none">
-                    Cancelar
-                </button>
+            <button type="button" onclick="closeModal('modalEditarUsuario')" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 border border-[#EAE4D8] dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 dark:hover:text-white transition-colors focus:outline-none">
+                Cancelar
+            </button>
                 <button type="submit" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 shadow-sm dark:shadow-[0_4px_20px_-2px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 dark:hover:-translate-y-[2px] transition-all focus:outline-none">
                     Guardar Cambios
                 </button>
