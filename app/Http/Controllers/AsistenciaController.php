@@ -112,20 +112,22 @@ class AsistenciaController extends Controller
         $finTurno        = Carbon::today()->setTimeFromTimeString(self::horaFin());
         $corteAutomatico = Carbon::today()->setTimeFromTimeString(self::horaCorte());
 
-        if ($horaActual->gte($corteAutomatico)) {
-            $actualizados = Asistencia::where('user_id', Auth::id())
-                ->whereNull('hora_salida')
-                ->update(['hora_salida' => self::horaFin()]);
-
-            if ($actualizados > 0) {
-                return back()->with(
-                    'warning',
-                    'Al no registrar salida dentro del horario permitido, tu turno fue cerrado automáticamente a las 6:00 p.m.'
-                );
-            }
-        }
-
+        // Fuera del horario permitido
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
+            // Si ya pasó el corte automático, cerrar la jornada a las 18:00
+            if ($horaActual->gte($corteAutomatico)) {
+                $actualizados = Asistencia::where('user_id', Auth::id())
+                    ->whereNull('hora_salida')
+                    ->update(['hora_salida' => self::horaFin()]);
+
+                if ($actualizados > 0) {
+                    return back()->with(
+                        'warning',
+                        'Al no registrar salida dentro del horario permitido, tu turno fue cerrado automáticamente a las 6:00 p.m.'
+                    );
+                }
+            }
+
             return back()->with(
                 'error',
                 'El registro de salida debe realizarse entre las 9:00 a.m. y las 6:00 p.m.'
@@ -193,7 +195,22 @@ class AsistenciaController extends Controller
     {
         $userId = Auth::id() ?? $request->input('user_id');
 
-        if (!$userId) {
+        if (!$userId || !is_numeric($userId)) {
+            return response()->json(['status' => 'unauthorized'], 401);
+        }
+
+        // Rate limiting: máximo 5 intentos por IP por minuto para evitar abuso
+        // ya que esta ruta está fuera del middleware auth.
+        $key = 'salida-involuntaria:' . $request->ip();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json(['status' => 'too_many_requests'], 429);
+        }
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 60);
+
+        // Verificar que el user_id corresponda a un becario para evitar
+        // que alguien cierre jornadas de admin con un sendBeacon manipulado.
+        $user = \App\Models\User::where('id', $userId)->where('role', 'becario')->first();
+        if (!$user) {
             return response()->json(['status' => 'unauthorized'], 401);
         }
 
@@ -299,7 +316,9 @@ class AsistenciaController extends Controller
         $pausaExcedida = false;
 
         if ($pausaActiva) {
-            $minutosPausa = Carbon::parse($pausaActiva->inicio_pausa)->diffInMinutes(now());
+            $fechaAsistencia = $asistencia->fecha ?? today()->toDateString();
+            $inicioPausa     = Carbon::parse($fechaAsistencia . ' ' . $pausaActiva->inicio_pausa);
+            $minutosPausa    = $inicioPausa->diffInMinutes(now());
 
             if ($minutosPausa >= 60) {
                 $pausaExcedida = true;

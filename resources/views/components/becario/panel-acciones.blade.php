@@ -67,7 +67,7 @@
     {{-- Info Box --}}
     <div class="bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/[0.06] rounded-2xl mt-auto p-4 flex gap-3 items-start transition-colors duration-300">
         <span class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-400/25 flex items-center justify-center shrink-0">
-            <ion-icon name="information-circle-outline"></ion-icon>
+            <ion-icon name="information-circle-outline" class="text-blue-600 dark:text-blue-400 text-lg"></ion-icon>
         </span>
         <div>
             <p class="font-bold text-sm mb-0 text-gray-900 dark:text-white">Recuerda registrar tus pausas</p>

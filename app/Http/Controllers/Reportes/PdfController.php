@@ -30,41 +30,15 @@ class PdfController extends Controller
         $semana = $request->input('semana');
 
         // Construcción directa de la consulta general
-        $query = Asistencia::query()
+        $asistencias = Asistencia::query()
             ->with(['user', 'pausas'])
             ->join('users', 'users.id', '=', 'asistencias.user_id')
             ->select('asistencias.*')
-            ->orderBy('users.name');
-
-        if ($buscar) {
-            $query->where('users.name', 'like', "%{$buscar}%");
-        }
-
-        if ($mes) {
-            $query->whereMonth('fecha', $mes);
-        }
-
-        if ($semana) {
-            switch ($semana) {
-                case 1:
-                    $query->whereDay('fecha', '>=', 1)->whereDay('fecha', '<=', 7);
-                    break;
-                case 2:
-                    $query->whereDay('fecha', '>=', 8)->whereDay('fecha', '<=', 14);
-                    break;
-                case 3:
-                    $query->whereDay('fecha', '>=', 15)->whereDay('fecha', '<=', 21);
-                    break;
-                case 4:
-                    $query->whereDay('fecha', '>=', 22)->whereDay('fecha', '<=', 28);
-                    break;
-                case 5:
-                    $query->whereDay('fecha', '>=', 29);
-                    break;
-            }
-        }
-
-        $asistencias = $query->get();
+            ->orderBy('users.name')
+            ->when($buscar, fn($q) => $q->where('users.name', 'like', "%{$buscar}%"))
+            ->filtrarPorMes($mes)
+            ->filtrarPorSemana($semana)
+            ->get();
 
         $resumen = $this->reporteService->obtenerResumen($asistencias);
 

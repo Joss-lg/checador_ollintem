@@ -60,7 +60,7 @@
 
                         {{-- Tooltip: solo visible en desktop cuando está colapsado --}}
                         <span x-show="sidebarCollapsed"
-                              class="hidden md:group-hover:flex absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-gray-900 dark:bg-black text-white text-xs font-medium whitespace-nowrap shadow-lg z-[1060]">
+                              class="hidden md:group-hover:flex absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-gray-900 dark:bg-black text-white text-xs font-medium whitespace-nowrap shadow-lg z-[1060] max-w-[160px]">
                             {{ $link['label'] }}
                         </span>
                     </a>
@@ -80,7 +80,7 @@
                             Salir
                         </span>
                         <span x-show="sidebarCollapsed"
-                              class="hidden md:group-hover:flex absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-gray-900 dark:bg-black text-white text-xs font-medium whitespace-nowrap shadow-lg z-[1060]">
+                              class="hidden md:group-hover:flex absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-gray-900 dark:bg-black text-white text-xs font-medium whitespace-nowrap shadow-lg z-[1060] max-w-[160px]">
                             Salir
                         </span>
                     </button>

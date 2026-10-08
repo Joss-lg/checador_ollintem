@@ -6,7 +6,7 @@
     <p class="uppercase text-gray-500 dark:text-slate-500 font-bold tracking-[2px] text-[0.7rem] mb-1">Tu turno en tiempo real</p>
 
     {{-- Reloj analógico --}}
-    <div class="relative w-[250px] h-[250px] mx-auto mt-3">
+    <div class="relative w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] mx-auto mt-3">
         <div class="absolute inset-0 rounded-full bg-blue-500/10 dark:bg-blue-500/20 blur-3xl scale-90"></div>
 
         <div class="relative w-full h-full rounded-full border-8 border-gray-100 dark:border-[#001f3f] bg-white dark:bg-gradient-to-b dark:from-[#00172e] dark:to-[#000d1a] shadow-none dark:shadow-[inset_0_0_30px_#000,0_0_40px_rgba(0,31,63,0.9)] transition-colors duration-300">
@@ -17,9 +17,9 @@
 
             <div class="absolute top-1/2 left-1/2 w-3.5 h-3.5 -mt-[7px] -ml-[7px] bg-blue-600 dark:bg-blue-500 rounded-full z-[6] shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
 
-            <div id="reloj-hora" class="absolute bottom-1/2 left-1/2 origin-bottom rounded w-1.5 h-[58px] -ml-[3px] bg-gradient-to-b from-blue-700 to-blue-400 dark:from-blue-600 dark:to-blue-300 z-[2]"></div>
-            <div id="reloj-min" class="absolute bottom-1/2 left-1/2 origin-bottom rounded w-1 h-[85px] -ml-[2px] bg-gradient-to-b from-cyan-600 to-blue-200 dark:from-cyan-400 dark:to-white z-[3]"></div>
-            <div id="reloj-seg" class="absolute bottom-1/2 left-1/2 origin-bottom rounded-full w-[2px] h-[95px] -ml-px bg-red-500/80 dark:bg-red-400/80 z-[4]"></div>
+            <div id="reloj-hora" class="absolute bottom-1/2 left-1/2 origin-bottom rounded w-1.5 h-[46px] sm:h-[58px] -ml-[3px] bg-gradient-to-b from-blue-700 to-blue-400 dark:from-blue-600 dark:to-blue-300 z-[2]"></div>
+            <div id="reloj-min" class="absolute bottom-1/2 left-1/2 origin-bottom rounded w-1 h-[68px] sm:h-[85px] -ml-[2px] bg-gradient-to-b from-cyan-600 to-blue-200 dark:from-cyan-400 dark:to-white z-[3]"></div>
+            <div id="reloj-seg" class="absolute bottom-1/2 left-1/2 origin-bottom rounded-full w-[2px] h-[76px] sm:h-[95px] -ml-px bg-red-500/80 dark:bg-red-400/80 z-[4]"></div>
         </div>
     </div>
 

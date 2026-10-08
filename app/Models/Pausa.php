@@ -30,11 +30,23 @@ class Pausa extends Model
         if (!$this->inicio_pausa) {
             return 0;
         }
-        $inicio = Carbon::parse($this->inicio_pausa);
-        $fin = $this->fin_pausa
-            ? Carbon::parse($this->fin_pausa)
-            : now();
-        return $inicio->diffInSeconds($fin);
+
+        // Usar la fecha del registro para que pausas que cruzan medianoche
+        // no devuelvan segundos negativos o incorrectos.
+        $fecha  = $this->fecha ?? now()->toDateString();
+        $inicio = Carbon::parse($fecha . ' ' . $this->inicio_pausa);
+
+        if ($this->fin_pausa) {
+            $fin = Carbon::parse($fecha . ' ' . $this->fin_pausa);
+            // Si fin < inicio asumimos que cruzó medianoche
+            if ($fin->lt($inicio)) {
+                $fin->addDay();
+            }
+        } else {
+            $fin = now();
+        }
+
+        return max(0, $inicio->diffInSeconds($fin));
     }
 
     public function getDuracionFormatoAttribute()

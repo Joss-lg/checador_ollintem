@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,15 +12,7 @@ use Illuminate\Validation\Rules\Password;
 
 class HomeController extends Controller
 {
-    /**
-     * CAPA DE SEGURIDAD: Validación interna para evitar acceso de no administradores.
-     */
-    private function authorizeAdmin()
-    {
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
-            abort(403, 'Acceso denegado.');
-        }
-    }
+    use AuthorizesAdmin;
 
     public function index()
     {
@@ -57,6 +50,10 @@ class HomeController extends Controller
             return back()->with('error', 'No puedes eliminar al administrador principal.');
         }
 
+        if ($id == Auth::id()) {
+            return back()->with('error', 'No puedes eliminar tu propia cuenta.');
+        }
+
         User::findOrFail($id)->delete();
         return back()->with('success', 'Usuario eliminado correctamente.');
     }
@@ -64,6 +61,14 @@ class HomeController extends Controller
     public function toggleAdmin($id)
     {
         $this->authorizeAdmin();
+
+        if ($id == 1) {
+            return back()->with('error', 'No puedes cambiar el rol del administrador principal.');
+        }
+
+        if ($id == Auth::id()) {
+            return back()->with('error', 'No puedes cambiar tu propio rol.');
+        }
 
         $user = User::findOrFail($id);
         $user->role = ($user->role === 'admin') ? 'becario' : 'admin';

@@ -346,6 +346,74 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ============================================================
+// POLLING — detecta cierre forzado por admin y pausa > 60 min
+// ============================================================
+// Consulta /api/estado-jornada cada 30 segundos.
+// Si la jornada fue cerrada (por admin o por pausa excedida),
+// muestra un toast y recarga la página para que el becario vea
+// el estado actualizado.
+// ============================================================
+(function pollingEstadoJornada() {
+    const cfg = window.checadorConfig || {};
+    if (cfg.estado !== 'trabajando' && cfg.estado !== 'pausado') return;
+
+    const INTERVALO_MS = 30 * 1000;
+
+    function getCsrf() {
+        const m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.getAttribute('content') : '';
+    }
+
+    function verificar() {
+        fetch('/api/estado-jornada', {
+            headers: {
+                'Accept':           'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN':     getCsrf(),
+            },
+        })
+        .then(function(r) {
+            if (r.status === 419) { window.location.reload(); return null; }
+            if (!r.ok) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+
+            if (data.pausaExcedida) {
+                // El servidor ya cerró la jornada por pausa > 60 min
+                if (typeof window.mostrarToast === 'function') {
+                    window.mostrarToast(
+                        'warning',
+                        'Jornada cerrada',
+                        'Tu pausa superó 1 hora. La jornada fue cerrada automáticamente.'
+                    );
+                }
+                setTimeout(function() { window.location.reload(); }, 2500);
+                return;
+            }
+
+            if (data.terminado) {
+                // Admin forzó la salida
+                window.location.reload();
+            }
+        })
+        .catch(function() { /* error de red — reintentar en el siguiente ciclo */ });
+    }
+
+    // Pausar el polling cuando el tab está oculto (ahorra batería en móvil)
+    let intervalo = setInterval(verificar, INTERVALO_MS);
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(intervalo);
+        } else {
+            verificar(); // revisar inmediatamente al volver
+            intervalo = setInterval(verificar, INTERVALO_MS);
+        }
+    });
+})();
+
+// ============================================================
 // AVISO AL CERRAR LA VENTANA
 // ============================================================
 (function registrarAvisoSalida() {

@@ -2,7 +2,7 @@
 
 <form method="GET" class="mb-4">
 
-    <div class="bg-white dark:bg-gray-900 border border-[#EAE4D8] dark:border-gray-700 rounded-2xl shadow-sm">
+    <div class="bg-white dark:bg-[#15181d] border border-[#EAE4D8] dark:border-white/10 rounded-2xl shadow-sm">
 
         <div class="p-5">
 
@@ -14,7 +14,7 @@
                         Buscar becario
                     </label>
                     <input type="text" name="search"
-                           class="w-full bg-white dark:bg-gray-800 border border-[#EAE4D8] dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:outline-none"
+                           class="w-full bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/40 focus:outline-none"
                            placeholder="Nombre o correo..."
                            value="{{ request('search') }}">
                 </div>
@@ -25,7 +25,7 @@
                         Semana
                     </label>
                     <select name="semana"
-                            class="w-full bg-white dark:bg-gray-800 border border-[#EAE4D8] dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:outline-none">
+                            class="w-full bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/40 focus:outline-none">
                         <option value="">Todas</option>
                         <option value="1" @selected(request('semana')==1)>1 - 7</option>
                         <option value="2" @selected(request('semana')==2)>8 - 14</option>
@@ -41,7 +41,7 @@
                         Mes
                     </label>
                     <select name="mes"
-                            class="w-full bg-white dark:bg-gray-800 border border-[#EAE4D8] dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:outline-none">
+                            class="w-full bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/40 focus:outline-none">
                         <option value="">Todos</option>
                         @foreach($meses as $mes)
                             <option value="{{ $mes->numero_mes }}" @selected(request('mes')==$mes->numero_mes)>
@@ -57,7 +57,7 @@
                         Orden
                     </label>
                     <select name="order"
-                            class="w-full bg-white dark:bg-gray-800 border border-[#EAE4D8] dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:outline-none">
+                            class="w-full bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/40 focus:outline-none">
                         <option value="az" @selected(request('order')=='az')>A-Z</option>
                         <option value="za" @selected(request('order')=='za')>Z-A</option>
                         <option value="recent" @selected(request('order')=='recent')>Más reciente</option>
@@ -72,7 +72,7 @@
                            <ion-icon name="search-outline"></ion-icon> Buscar
                         </button>
                         <a href="{{ route('admin.historial') }}"
-                           class="inline-flex items-center justify-center gap-2 border border-[#EAE4D8] dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-4 py-2.5 transition-colors no-underline">
+                           class="inline-flex items-center justify-center gap-2 border border-[#EAE4D8] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-4 py-2.5 transition-colors no-underline">
                             <ion-icon name="refresh-outline"></ion-icon> Limpiar
                         </a>
                     </div>
