@@ -41,7 +41,7 @@ class CerrarJornadasVencidas
     {
         $ahora    = now();
         $hoy      = $ahora->toDateString();
-        $horaCorte = config('asistencia.hora_fin_jornada', '18:00:00');
+        $horaCorte = config('asistencia.hora_corte_auto', '18:01:00');
         $corte    = Carbon::today()->setTimeFromTimeString($horaCorte);
 
         // Comparación real de instancias Carbon, no de strings.

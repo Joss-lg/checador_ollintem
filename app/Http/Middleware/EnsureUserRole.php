@@ -30,7 +30,7 @@ class EnsureUserRole
         // a la vista que le corresponde en lugar de quedar atascado en una pantalla de error.
         if ($request->user()->role !== $role) {
             return redirect()->route(
-                $request->user()->role === 'admin' ? 'admin.dashboard' : 'becario.dashboard'
+                $request->user()->role === 'admin' ? 'admin.dashboard' : 'dashboard'
             );
         }
 

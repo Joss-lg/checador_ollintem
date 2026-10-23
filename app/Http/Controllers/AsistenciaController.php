@@ -49,8 +49,10 @@ class AsistenciaController extends Controller
                 ->get();
 
             foreach ($pausas as $p) {
-                $inicio = Carbon::parse($p->inicio_pausa);
-                $fin = Carbon::parse($p->fin_pausa);
+                $fecha  = $asistencia->fecha ?? now()->toDateString();
+                $inicio = Carbon::parse($fecha . ' ' . $p->inicio_pausa);
+                $fin    = Carbon::parse($fecha . ' ' . $p->fin_pausa);
+                if ($fin->lt($inicio)) $fin->addDay();
                 $segundosPausaAcumulados += $inicio->diffInSeconds($fin);
             }
         }

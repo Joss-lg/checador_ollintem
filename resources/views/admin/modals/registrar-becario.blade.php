@@ -1,4 +1,4 @@
-<div class="d-flex justify-content-end mb-3">
+<div class="flex justify-end mb-3">
     <button type="button" onclick="openModal('modalRegistrarBecario')" 
             class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-white dark:bg-white/5 border border-[#EAE4D8] dark:border-white/10 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30 transition-all shadow-sm focus:outline-none">
         <ion-icon name="person-add"></ion-icon>
@@ -24,7 +24,7 @@
                 </div>
             </div>
 
-            <button type="button" class="btn-close-modal shrink-0 text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-white dark:hover:bg-white/10 rounded-lg p-1.5 -mr-1.5 transition-colors" aria-label="Cerrar">
+            <button type="button" onclick="cerrarModalBecario()" class="shrink-0 text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-white dark:hover:bg-white/10 rounded-lg p-1.5 -mr-1.5 transition-colors" aria-label="Cerrar">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
@@ -55,7 +55,7 @@
 @if($errors->has('password'))
 <div class="mb-6 flex items-start gap-3 p-4 text-sm text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl shadow-sm">
     <div class="flex items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
-        <ion-icon name="shield-exclamation-outline" class="text-lg"></ion-icon>
+        <ion-icon name="warning-outline" class="text-lg"></ion-icon>
     </div>
     <div class="flex-1 pt-1.5">
         <span class="font-bold block mb-0.5 text-red-900 dark:text-red-300">Error del Servidor</span>
@@ -96,7 +96,7 @@
 
                 <div>
                     <label class="flex items-center gap-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-500 uppercase mb-4">
-                        <ion-icon name="shield-lock-outline" class="text-gray-400 dark:text-gray-600"></ion-icon> Configuración de Seguridad
+                        <ion-icon name="lock-closed-outline" class="text-gray-400 dark:text-gray-600"></ion-icon> Configuración de Seguridad
                     </label>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -128,7 +128,7 @@
             </div>
 
             <div class="shrink-0 flex flex-col-reverse sm:flex-row justify-end gap-3 px-6 py-4 bg-[#F4F0E6] dark:bg-white/[0.03] border-t border-[#EAE4D8] dark:border-white/[0.08]">
-                <button type="button" class="btn-close-modal w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 border border-[#EAE4D8] dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 dark:hover:text-white transition-colors focus:outline-none">
+                <button type="button" onclick="cerrarModalBecario()" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-white/5 border border-[#EAE4D8] dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 dark:hover:text-white transition-colors focus:outline-none">
                     Cancelar
                 </button>
                 <button type="submit" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 shadow-sm dark:shadow-[0_4px_20px_-2px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 dark:hover:-translate-y-[2px] transition-all focus:outline-none">
@@ -140,6 +140,36 @@
 </div>
 
 <script>
+// Cierre propio del modal: no depende de closeModal() del layout
+function cerrarModalBecario() {
+    const modal = document.getElementById('modalRegistrarBecario');
+    if (!modal) return;
+
+    // Revierte lo que pudo haber puesto openModal (clases o estilos en línea)
+    modal.classList.remove('opacity-100', 'pointer-events-auto', 'flex-visible', 'show', 'active', 'is-open');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    ['opacity', 'pointerEvents', 'display', 'visibility'].forEach(p => modal.style[p] = '');
+
+    const dialog = modal.querySelector('.modal-dialog');
+    if (dialog) {
+        dialog.classList.remove('scale-100');
+        dialog.classList.add('scale-95');
+    }
+
+    document.body.classList.remove('overflow-hidden', 'modal-open');
+    document.body.style.overflow = '';
+}
+
+// Cerrar al hacer clic en el fondo oscuro (fuera del cuadro)
+document.getElementById('modalRegistrarBecario').addEventListener('click', function (e) {
+    if (e.target === this) cerrarModalBecario();
+});
+
+// Cerrar con la tecla Escape
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cerrarModalBecario();
+});
+
 function generarEmailAuto() {
     let nombre = document.getElementById('nombre_becario').value;
     let emailBase = nombre.toLowerCase().replace(/\s+/g, '.');

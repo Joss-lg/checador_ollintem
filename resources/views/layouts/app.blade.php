@@ -224,6 +224,16 @@ window.cerrarToast = function(elemento) {
     .dark .badge-salida   { background:rgba(239,68,68,0.2);  color:#f87171; border-color:rgba(239,68,68,0.3); }
     .dark .badge-pausa    { background:rgba(245,158,11,0.2); color:#fbbf24; border-color:rgba(245,158,11,0.3); }
     .dark .badge-trabajado{ background:rgba(6,182,212,0.2);  color:#22d3ee; border-color:rgba(6,182,212,0.3); }
+
+    /* Selects en modo oscuro — los navegadores no aplican clases a <option>,
+       así que forzamos el color con CSS nativo */
+    .dark select {
+        color-scheme: dark;
+    }
+    .dark select option {
+        background-color: #1a1d23;
+        color: #f9fafb;
+    }
 </style>
 @stack('scripts')
 </body>

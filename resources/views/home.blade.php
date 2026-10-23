@@ -17,30 +17,32 @@
                     <thead>
                         <tr class="text-gray-600 dark:text-gray-400 bg-[#F4F0E6] dark:bg-white/5 border-b border-[#EAE4D8] dark:border-white/10">
                             <th class="pl-3 sm:pl-4 py-3 font-semibold uppercase text-[0.8rem] sm:text-xs">Nombre</th>
-                            <th class="py-3 font-semibold uppercase text-[0.8rem] sm:text-xs">Email</th>
+                            <th class="hidden sm:table-cell py-3 font-semibold uppercase text-xs">Email</th>
                             <th class="py-3 font-semibold uppercase text-[0.8rem] sm:text-xs">Rol</th>
                             <th class="text-right pr-3 sm:pr-4 py-3 font-semibold uppercase text-[0.8rem] sm:text-xs">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($usuarios as $user)
+                        @php
+                            $badgeRol = strtolower($user->role) === 'admin'
+                                ? 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'
+                                : 'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-white/5 dark:text-gray-400 dark:border-white/10';
+                        @endphp
                         <tr class="hover:bg-[#F9F6EE] dark:hover:bg-white/5 border-b border-[#EAE4D8] dark:border-white/10 last:border-0 transition-colors">
                             <td class="pl-3 sm:pl-4 py-3 text-[0.8rem] sm:text-base">
                                 <div class="flex items-center gap-2">
                                     <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#F4F0E6] dark:bg-white/10 border border-[#EAE4D8] dark:border-white/10 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-[0.75rem] sm:text-[0.9rem] flex-shrink-0">
                                         {{ strtoupper(substr($user->name, 0, 1)) }}
                                     </div>
-                                    <span class="text-gray-800 dark:text-gray-100 font-medium">{{ $user->name }}</span>
+                                    <span class="text-gray-800 dark:text-gray-100 font-medium truncate max-w-[120px] sm:max-w-none block">{{ $user->name }}</span>
                                 </div>
                             </td>
-                            <td class="py-3 text-[0.8rem] sm:text-base">
-                                <span class="text-gray-600 dark:text-gray-400">{{ $user->email }}</span>
+                            <td class="hidden sm:table-cell py-3 text-sm">
+                                <span class="text-gray-600 dark:text-gray-400 truncate max-w-[180px] block">{{ $user->email }}</span>
                             </td>
                             <td class="py-3">
-                                <span class="inline-flex items-center rounded-full font-semibold text-[0.7rem] px-2.5 py-1 sm:text-xs sm:px-3 sm:py-1.5
-                                    @if(strtolower($user->role) === 'admin') bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
-                                    @else bg-gray-100 text-gray-700 border border-gray-200 dark:bg-white/5 dark:text-gray-400 dark:border-white/10
-                                    @endif">
+                                <span class="inline-flex items-center rounded-full font-semibold text-[0.7rem] px-2.5 py-1 sm:text-xs sm:px-3 sm:py-1.5 {{ $badgeRol }}">
                                     {{ ucfirst($user->role) }}
                                 </span>
                             </td>
@@ -86,7 +88,7 @@
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/70 backdrop-blur-sm dark:backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 ease-out p-4"
      role="dialog" aria-modal="true">
 
-    <div class="modal-dialog relative w-full max-w-sm flex flex-col bg-white dark:bg-[#15181d] text-gray-800 dark:text-white border border-[#EAE4D8] dark:border-white/10 rounded-2xl shadow-2xl dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden transform scale-95 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+    <div class="modal-dialog relative w-full max-w-sm max-h-[90vh] flex flex-col bg-white dark:bg-[#15181d] text-gray-800 dark:text-white border border-[#EAE4D8] dark:border-white/10 rounded-2xl shadow-2xl dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden transform scale-95 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
 
         <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-90"></div>
 

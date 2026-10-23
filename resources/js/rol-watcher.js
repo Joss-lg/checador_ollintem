@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const POLLING_ROL_MS = 3000; // cada 3 segundos, casi instantáneo sin saturar el servidor
+    const POLLING_ROL_MS = 30_000; // cada 30 s — el cambio de rol es infrecuente
 
     function verificarRol() {
         fetch('/api/rol-actual', {

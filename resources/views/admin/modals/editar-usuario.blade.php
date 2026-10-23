@@ -77,9 +77,9 @@
 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cargo (Rol)</label>
-                    <select name="role" id="edit_role" class="w-full px-4 py-2.5 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all">
-                        <option value="becario">Becario</option>
-                        <option value="admin">Administrador</option>
+                    <select name="role" id="edit_role" class="w-full px-4 py-2.5 bg-white dark:bg-[#1a1d23] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all appearance-none cursor-pointer">
+                        <option value="becario" class="bg-white dark:bg-[#1a1d23] text-gray-800 dark:text-white">Becario</option>
+                        <option value="admin" class="bg-white dark:bg-[#1a1d23] text-gray-800 dark:text-white">Administrador</option>
                     </select>
                 </div>
 

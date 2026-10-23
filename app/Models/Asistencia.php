@@ -68,25 +68,7 @@ class Asistencia extends Model
         return $this->hasMany(Pausa::class, 'asistencia_id');
     }
 
-    /**
-     * Devuelve las horas extra de esta jornada en formato HH:MM:SS.
-     * Se considera jornada normal = 9 horas. Todo lo que pase de eso es extra.
-     * Devuelve "00:00:00" si no hubo horas extra.
-     */
-    public function horasExtrasTotalFormato(): string
-    {
-        $jornadaNormal = 9 * 3600;
-        $trabajado     = $this->tiempoTrabajado();
-        $extra         = max(0, $trabajado - $jornadaNormal);
-
-        $h = floor($extra / 3600);
-        $m = floor(($extra % 3600) / 60);
-        $s = $extra % 60;
-
-        return sprintf('%02d:%02d:%02d', $h, $m, $s);
-    }
-
-    public function tienePausaActiva()
+        public function tienePausaActiva()
     {
         return $this->pausas->contains(function ($pausa) {
             return is_null($pausa->fin_pausa);

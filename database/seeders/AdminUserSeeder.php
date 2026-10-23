@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
         User::create([
             'name' => 'Administrador del Sistema',
             'email' => 'admin@checador.com',
-            'password' => Hash::make('password123'), // Contraseña de prueba
+            'password' => Hash::make(env('ADMIN_SEED_PASSWORD', 'password123')),
             'role' => 'admin', // Asignamos el rol admin
         ]);
     }

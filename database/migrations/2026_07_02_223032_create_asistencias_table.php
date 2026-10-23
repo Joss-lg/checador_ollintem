@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('asistencias', function (Blueprint $table) {
@@ -18,12 +15,17 @@ return new class extends Migration
             $table->time('hora_salida')->nullable();
             $table->date('fecha');
             $table->timestamps();
+
+            // Índices para las consultas más frecuentes del sistema:
+            // - Buscar la asistencia activa de un becario en la fecha de hoy
+            // - Filtrar historial por becario y fecha
+            $table->index(['user_id', 'fecha']);
+
+            // - Cierre automático: buscar jornadas sin salida del día actual
+            $table->index(['fecha', 'hora_salida']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('asistencias');
