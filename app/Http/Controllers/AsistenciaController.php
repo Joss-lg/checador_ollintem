@@ -12,8 +12,18 @@ use Carbon\Carbon;
 class AsistenciaController extends Controller
 {
     private static function horaInicio(): string  { return config('asistencia.hora_inicio_jornada', '09:00:00'); }
-    private static function horaFin(): string     { return config('asistencia.hora_fin_jornada',    '18:00:00'); }
+    private static function horaFin(): string     { return Asistencia::horaFinJornada(); }
     private static function horaCorte(): string   { return config('asistencia.hora_corte_auto',     '18:01:00'); }
+
+    /**
+     * Hora de salida a guardar: la actual, o la hora fin oficial si ya pasó.
+     */
+    private static function horaSalidaTopada(): string
+    {
+        $finTurno = Carbon::today()->setTimeFromTimeString(self::horaFin());
+
+        return now()->gt($finTurno) ? self::horaFin() : now()->format('H:i:s');
+    }
 
     public function index()
     {
@@ -28,41 +38,47 @@ class AsistenciaController extends Controller
         $pausaInicio = null;
         $segundosPausaAcumulados = 0;
 
-        if ($asistencia && !$asistencia->hora_salida) {
+        if ($asistencia) {
             $horaEntrada = $asistencia->fecha . ' ' . $asistencia->hora_entrada;
 
-            $pausa = Pausa::where('asistencia_id', $asistencia->id)
-                ->whereNull('fin_pausa')
-                ->latest()
-                ->first();
-
-            if ($pausa) {
-                $estado = 'pausado';
-                $pausaInicio = $asistencia->fecha . ' ' . $pausa->inicio_pausa;
+            if ($asistencia->hora_salida) {
+                // Jornada de hoy ya cerrada: se muestra como terminada y no
+                // se permite registrar otra entrada el mismo día.
+                $estado     = 'terminado';
+                $horaSalida = $asistencia->fecha . ' ' . $asistencia->hora_salida;
             } else {
-                $estado = 'trabajando';
+                $pausa = Pausa::where('asistencia_id', $asistencia->id)
+                    ->whereNull('fin_pausa')
+                    ->latest()
+                    ->first();
+
+                if ($pausa) {
+                    $estado = 'pausado';
+                    $pausaInicio = $asistencia->fecha . ' ' . $pausa->inicio_pausa;
+                } else {
+                    $estado = 'trabajando';
+                }
             }
 
-            // Sumar pausas terminadas de la jornada activa
+            // Sumar pausas terminadas de la jornada
             $pausas = Pausa::where('asistencia_id', $asistencia->id)
                 ->whereNotNull('fin_pausa')
                 ->get();
 
             foreach ($pausas as $p) {
-                $fecha  = $asistencia->fecha ?? now()->toDateString();
-                $inicio = Carbon::parse($fecha . ' ' . $p->inicio_pausa);
-                $fin    = Carbon::parse($fecha . ' ' . $p->fin_pausa);
+                $inicio = Carbon::parse($asistencia->fecha . ' ' . $p->inicio_pausa);
+                $fin    = Carbon::parse($asistencia->fecha . ' ' . $p->fin_pausa);
                 if ($fin->lt($inicio)) $fin->addDay();
-                $segundosPausaAcumulados += $inicio->diffInSeconds($fin);
+                $segundosPausaAcumulados += (int) $inicio->diffInSeconds($fin);
             }
         }
 
         return view('becario.dashboard', [
-            'presenter'               => new EstadoTurnoPresenter($estado ?? null),
-            'horaEntrada'             => $horaEntrada ?? null,
-            'pausaInicio'             => $pausaInicio ?? null,
-            'horaSalida'              => $horaSalida ?? null,
-            'segundosPausaAcumulados' => $segundosPausaAcumulados ?? 0,
+            'presenter'               => new EstadoTurnoPresenter($estado),
+            'horaEntrada'             => $horaEntrada,
+            'pausaInicio'             => $pausaInicio,
+            'horaSalida'              => $horaSalida,
+            'segundosPausaAcumulados' => $segundosPausaAcumulados,
             'userId'                  => Auth::id(),
         ]);
     }
@@ -82,24 +98,29 @@ class AsistenciaController extends Controller
             );
         }
 
-        $asistenciaActiva = Asistencia::where('user_id', Auth::id())
-            ->whereNull('hora_salida')
+        $hoy = now()->toDateString();
+
+        $jornadaHoy = Asistencia::where('user_id', Auth::id())
+            ->where('fecha', $hoy)
             ->first();
 
-        if ($asistenciaActiva) {
-            $hoy = now()->toDateString();
-            
-            if ($asistenciaActiva->fecha === $hoy) {
-                return back()->with('error', 'Ya cuentas con un registro de entrada activo para el día de hoy.');
-            }
-
-            $asistenciaActiva->update(['hora_salida' => self::horaFin()]);
+        if ($jornadaHoy) {
+            return back()->with('error', $jornadaHoy->hora_salida
+                ? 'Ya registraste tu jornada de hoy. Si necesitas reabrirla, contacta al administrador.'
+                : 'Ya cuentas con un registro de entrada activo para el día de hoy.');
         }
+
+        // Jornadas olvidadas de días anteriores: se cierran a la hora fin
+        // oficial, junto con sus pausas abiertas.
+        Asistencia::where('user_id', Auth::id())
+            ->whereNull('hora_salida')
+            ->get()
+            ->each->cerrar(self::horaFin());
 
         Asistencia::create([
             'user_id'      => Auth::id(),
             'hora_entrada' => $horaActual->format('H:i:s'),
-            'fecha'        => now()->toDateString(),
+            'fecha'        => $hoy,
         ]);
 
         return back()->with('success', 'Entrada registrada correctamente.');
@@ -118,11 +139,13 @@ class AsistenciaController extends Controller
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             // Si ya pasó el corte automático, cerrar la jornada a las 18:00
             if ($horaActual->gte($corteAutomatico)) {
-                $actualizados = Asistencia::where('user_id', Auth::id())
+                $abiertas = Asistencia::where('user_id', Auth::id())
                     ->whereNull('hora_salida')
-                    ->update(['hora_salida' => self::horaFin()]);
+                    ->get();
 
-                if ($actualizados > 0) {
+                $abiertas->each->cerrar(self::horaFin());
+
+                if ($abiertas->isNotEmpty()) {
                     return back()->with(
                         'warning',
                         'Al no registrar salida dentro del horario permitido, tu turno fue cerrado automáticamente a las 6:00 p.m.'
@@ -173,82 +196,25 @@ class AsistenciaController extends Controller
             return redirect()->route('dashboard');
         }
 
-        Pausa::where('asistencia_id', $asistencia->id)
-            ->whereNull('fin_pausa')
-            ->update(['fin_pausa' => now()->format('H:i:s')]);
-
-        $horaActual  = now();
-        $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
-        $horaSalida  = $horaActual->gt($corteCarbon)
-            ? self::horaFin()
-            : $horaActual->format('H:i:s');
-
-        $asistencia->update(['hora_salida' => $horaSalida]);
+        $asistencia->cerrar(self::horaSalidaTopada());
 
         return redirect()->route('dashboard')
             ->with('warning', 'Se registró tu salida automáticamente por inactividad.');
-    }
-
-    /**
-     * Registra la salida automática cuando el becario cierra la pestaña o el navegador.
-     * Soporta sesión activa o user_id recibido vía sendBeacon.
-     */
-    public function registrarSalidaInvoluntaria(Request $request)
-    {
-        $userId = Auth::id() ?? $request->input('user_id');
-
-        if (!$userId || !is_numeric($userId)) {
-            return response()->json(['status' => 'unauthorized'], 401);
-        }
-
-        // Rate limiting: máximo 5 intentos por IP por minuto para evitar abuso
-        // ya que esta ruta está fuera del middleware auth.
-        $key = 'salida-involuntaria:' . $request->ip();
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
-            return response()->json(['status' => 'too_many_requests'], 429);
-        }
-        \Illuminate\Support\Facades\RateLimiter::hit($key, 60);
-
-        // Verificar que el user_id corresponda a un becario para evitar
-        // que alguien cierre jornadas de admin con un sendBeacon manipulado.
-        $user = \App\Models\User::where('id', $userId)->where('role', 'becario')->first();
-        if (!$user) {
-            return response()->json(['status' => 'unauthorized'], 401);
-        }
-
-        $asistencia = Asistencia::where('user_id', $userId)
-            ->whereNull('hora_salida')
-            ->where('fecha', now()->toDateString())
-            ->first();
-
-        if (!$asistencia) {
-            return response()->json(['status' => 'no_active_session'], 200);
-        }
-
-        // Si hay una pausa activa la cerramos
-        Pausa::where('asistencia_id', $asistencia->id)
-            ->whereNull('fin_pausa')
-            ->update(['fin_pausa' => now()->format('H:i:s')]);
-
-        $horaActual  = now();
-        $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
-
-        $horaSalida = $horaActual->gt($corteCarbon)
-            ? self::horaFin()
-            : $horaActual->format('H:i:s');
-
-        $asistencia->update(['hora_salida' => $horaSalida]);
-
-        return response()->json(['status' => 'success', 'hora_salida' => $horaSalida]);
     }
 
     public function iniciarPausa(Request $request)
     {
         if (!Auth::check()) return redirect('/login');
 
+        $request->validate([
+            'motivo' => ['required', 'string', 'in:Almuerzo,Personal'],
+        ]);
+
+        // Solo la jornada abierta de HOY: no se abren pausas sobre jornadas
+        // olvidadas de días anteriores.
         $asistencia = Asistencia::where('user_id', Auth::id())
             ->whereNull('hora_salida')
-            ->latest('fecha')
+            ->where('fecha', now()->toDateString())
             ->first();
 
         if (!$asistencia) {
@@ -318,9 +284,8 @@ class AsistenciaController extends Controller
         $pausaExcedida = false;
 
         if ($pausaActiva) {
-            $fechaAsistencia = $asistencia->fecha ?? today()->toDateString();
-            $inicioPausa     = Carbon::parse($fechaAsistencia . ' ' . $pausaActiva->inicio_pausa);
-            $minutosPausa    = $inicioPausa->diffInMinutes(now());
+            $inicioPausa  = Carbon::parse($asistencia->fecha . ' ' . $pausaActiva->inicio_pausa);
+            $minutosPausa = $inicioPausa->diffInMinutes(now());
 
             if ($minutosPausa >= 60) {
                 $pausaExcedida = true;
@@ -330,15 +295,7 @@ class AsistenciaController extends Controller
                 // el becario recargue la página)
                 $asistencia->refresh();
                 if (!$asistencia->hora_salida) {
-                    $pausaActiva->update(['fin_pausa' => now()->format('H:i:s')]);
-
-                    $horaActual  = now();
-                    $corteCarbon = Carbon::today()->setTimeFromTimeString(self::horaFin());
-                    $horaSalida  = $horaActual->gt($corteCarbon)
-                        ? self::horaFin()
-                        : $horaActual->format('H:i:s');
-
-                    $asistencia->update(['hora_salida' => $horaSalida]);
+                    $asistencia->cerrar(self::horaSalidaTopada());
                 }
             }
         }

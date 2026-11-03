@@ -59,7 +59,7 @@
 
                     <td class="px-4 py-3 text-center">
                         <button type="button"
-                                onclick="abrirEditarJornada(
+                                onclick="(window.abrirEditarJornada||function(){})(
                                     {{ $asistencia->id }},
                                     '{{ addslashes($asistencia->user->name) }}',
                                     '{{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}',
@@ -103,7 +103,7 @@
                             {{ $asistencia->formatoTiempo($asistencia->tiempoTrabajado()) }}
                         </span>
                         <button type="button"
-                                onclick="abrirEditarJornada(
+                                onclick="(window.abrirEditarJornada||function(){})(
                                     {{ $asistencia->id }},
                                     '{{ addslashes($asistencia->user->name) }}',
                                     '{{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}',

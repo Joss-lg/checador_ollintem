@@ -1,1 +1,0 @@
-<?php /**PATH C:\Users\tortu\Checador-Online\resources\views/components/history/modal.blade.php ENDPATH**/ ?>

@@ -34,15 +34,6 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('datosReporte'));
     }
 
-    public function show(Asistencia $asistencia)
-    {
-        $this->authorizeAdmin();
-        
-        $asistencia->load(['user', 'pausas']);
-
-        return response()->json($asistencia);
-    }
-
     public function storeBecario(Request $request)
     {
         $this->authorizeAdmin();

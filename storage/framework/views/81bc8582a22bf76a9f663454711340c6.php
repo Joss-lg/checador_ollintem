@@ -1,1 +1,0 @@
-<?php /**PATH C:\Users\Usuario\checador_ollintem\resources\views/components/history/modal.blade.php ENDPATH**/ ?>

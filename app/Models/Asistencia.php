@@ -11,7 +11,10 @@ class Asistencia extends Model
         'user_id',
         'hora_entrada',
         'hora_salida',
-        'fecha'
+        'fecha',
+        'motivo_correccion',
+        'corregido_por',
+        'corregido_at',
     ];
 
     public function user()
@@ -19,19 +22,75 @@ class Asistencia extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Hora oficial de fin de jornada (config/asistencia.php). Es la hora que
+     * se guarda como salida en cualquier cierre automático.
+     */
+    public static function horaFinJornada(): string
+    {
+        return config('asistencia.hora_fin_jornada', '18:00:00');
+    }
+
+    /**
+     * Cierra la jornada: primero sus pausas abiertas y luego la salida,
+     * ambas con la misma hora para que no queden pausas colgadas.
+     */
+    public function cerrar(string $horaSalida): void
+    {
+        $this->pausas()
+            ->whereNull('fin_pausa')
+            ->update(['fin_pausa' => $horaSalida]);
+
+        $this->update(['hora_salida' => $horaSalida]);
+    }
+
+    /**
+     * Cierre masivo de jornadas abiertas con fecha <= $hastaFecha
+     * (usado por el comando programado y el middleware de cierre).
+     */
+    public static function cerrarAbiertas(string $hastaFecha, string $horaSalida): int
+    {
+        $ids = static::whereNull('hora_salida')
+            ->where('fecha', '<=', $hastaFecha)
+            ->pluck('id');
+
+        if ($ids->isEmpty()) {
+            return 0;
+        }
+
+        Pausa::whereIn('asistencia_id', $ids)
+            ->whereNull('fin_pausa')
+            ->update(['fin_pausa' => $horaSalida]);
+
+        return static::whereIn('id', $ids)->update(['hora_salida' => $horaSalida]);
+    }
+
+    /**
+     * Momento que se toma como "fin" de una jornada o pausa sin cerrar:
+     * la salida registrada, o ahora si es de hoy, o la hora fin oficial si
+     * es de un día anterior (para que los días viejos no crezcan sin límite).
+     */
+    private function finReferencia(): Carbon
+    {
+        if ($this->hora_salida) {
+            return Carbon::parse($this->fecha . ' ' . $this->hora_salida);
+        }
+
+        return $this->fecha === now()->toDateString()
+            ? now()
+            : Carbon::parse($this->fecha . ' ' . self::horaFinJornada());
+    }
+
     public function tiempoTrabajado()
     {
         if (!$this->hora_entrada) {
            return 0;
         }
-        
+
         $entrada = Carbon::parse($this->fecha . ' ' . $this->hora_entrada);
-        
-        $salida = $this->hora_salida
-            ? Carbon::parse($this->fecha . ' ' . $this->hora_salida)
-            : now();
-            
-        $totalBruto = $entrada->diffInSeconds($salida);
+        $salida  = $this->finReferencia();
+
+        $totalBruto = max(0, (int) $entrada->diffInSeconds($salida, false));
         $pausas = $this->tiempoPausasSegundos();
         
         return max(0, $totalBruto - $pausas);
@@ -52,8 +111,8 @@ class Asistencia extends Model
             $inicio = Carbon::parse($this->fecha . ' ' . $pausa->inicio_pausa);
             $fin = $pausa->fin_pausa
                 ? Carbon::parse($this->fecha . ' ' . $pausa->fin_pausa)
-                : now();
-            $segundos += $inicio->diffInSeconds($fin);
+                : $this->finReferencia();
+            $segundos += max(0, (int) $inicio->diffInSeconds($fin, false));
         }
         return $segundos;
     }

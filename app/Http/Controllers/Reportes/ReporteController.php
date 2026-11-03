@@ -19,12 +19,17 @@ class ReporteController extends Controller
         $this->reporteService = $reporteService;
     }
 
-    public function show(User $user)
+    public function show(Request $request, User $user)
     {
         $this->authorizeAdmin();
 
-        // Obtener asistencias del becario a través del servicio de reportes
-        $asistencias = $this->reporteService->obtenerReporteBecario($user);
+        // Obtener asistencias del becario a través del servicio de reportes,
+        // con el mismo filtro de fechas que usan las exportaciones Excel/PDF.
+        $asistencias = $this->reporteService->obtenerReporteBecario(
+            $user,
+            $request->input('desde'),
+            $request->input('hasta')
+        );
 
         // Obtener el resumen general de la jornada y pausas
         $resumen = $this->reporteService->obtenerResumen($asistencias);

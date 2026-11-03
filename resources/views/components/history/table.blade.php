@@ -23,7 +23,7 @@
                         <span class="md:hidden">Tiempo</span>
                         <span class="hidden md:inline">Tiempo trabajado</span>
                     </th>
-                    <th class="w-[2.75rem] md:w-auto px-2 md:px-4 py-3 text-left text-[0.65rem] md:text-xs uppercase font-bold">
+                    <th class="w-[4.5rem] md:w-auto px-2 md:px-4 py-3 text-left text-[0.65rem] md:text-xs uppercase font-bold">
                         <span class="sr-only md:not-sr-only">Acciones</span>
                     </th>
                 </tr>

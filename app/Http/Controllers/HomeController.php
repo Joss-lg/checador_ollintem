@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesAdmin;
+use App\Models\Pausa;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +55,22 @@ class HomeController extends Controller
             return back()->with('error', 'No puedes eliminar tu propia cuenta.');
         }
 
-        User::findOrFail($id)->delete();
+        $user = User::findOrFail($id);
+
+        // Las llaves foráneas de `pausas` no tienen ON DELETE CASCADE, así que
+        // se borran a mano (pausas → asistencias → usuario) en una transacción
+        // en vez de alterar la tabla en producción.
+        DB::transaction(function () use ($user) {
+            $asistenciaIds = $user->asistencias()->pluck('id');
+
+            Pausa::where('user_id', $user->id)
+                ->orWhereIn('asistencia_id', $asistenciaIds)
+                ->delete();
+
+            $user->asistencias()->delete();
+            $user->delete();
+        });
+
         return back()->with('success', 'Usuario eliminado correctamente.');
     }
 
@@ -90,6 +106,19 @@ class HomeController extends Controller
 
         return DB::transaction(function () use ($request, $id) {
             $user = User::findOrFail($id);
+
+            // Mismas protecciones que toggleAdmin(): no se puede cambiar el
+            // rol del administrador principal ni el propio desde aquí.
+            if ($request->role !== $user->role) {
+                if ($id == 1) {
+                    return back()->with('error', 'No puedes cambiar el rol del administrador principal.');
+                }
+
+                if ($id == Auth::id()) {
+                    return back()->with('error', 'No puedes cambiar tu propio rol.');
+                }
+            }
+
             $user->name = $request->name;
             $user->email = $request->email;
             $user->role = $request->role;

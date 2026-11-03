@@ -44,10 +44,12 @@ class CerrarJornadasVencidas
         $horaCorte = config('asistencia.hora_corte_auto', '18:01:00');
         $corte    = Carbon::today()->setTimeFromTimeString($horaCorte);
 
+        // Antes del corte solo se cierran jornadas olvidadas de días
+        // anteriores; después del corte también las de hoy.
         // Comparación real de instancias Carbon, no de strings.
-        if ($ahora->lt($corte)) {
-            return;
-        }
+        $hastaFecha = $ahora->lt($corte)
+            ? Carbon::yesterday()->toDateString()
+            : $hoy;
 
         // Throttle: como mucho una vez por minuto y por día, para no lanzar
         // el UPDATE en cada request. Si en ese minuto no hay nada que
@@ -60,8 +62,8 @@ class CerrarJornadasVencidas
 
         Cache::put($llave, true, now()->addMinutes(2));
 
-        Asistencia::where('fecha', $hoy)
-            ->whereNull('hora_salida')
-            ->update(['hora_salida' => $horaCorte]);
+        // Se guarda la hora fin oficial (18:00), no la hora de corte (18:01),
+        // igual que en el resto del sistema. También cierra las pausas abiertas.
+        Asistencia::cerrarAbiertas($hastaFecha, Asistencia::horaFinJornada());
     }
 }

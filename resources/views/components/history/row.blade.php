@@ -53,13 +53,29 @@
         {{ $asistencia->formatoTiempo($asistencia->tiempoTrabajado()) }}
     </td>
 
-    {{-- Acción (en móvil solo el ícono) --}}
+    {{-- Acciones (en móvil solo los íconos) --}}
     <td class="px-2 md:px-4 py-3">
-        <a href="{{ route('admin.historial.reporte', $asistencia->user->id) }}"
-           title="Reporte" aria-label="Reporte"
-           class="inline-flex items-center justify-center gap-1 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg h-7 w-7 md:h-auto md:w-auto md:px-3 md:py-1.5 text-sm transition-colors no-underline">
-            <ion-icon name="document-outline" class="md:mr-1"></ion-icon>
-            <span class="hidden md:inline">Reporte</span>
-        </a>
+        <div class="flex items-center gap-1 md:gap-2">
+            <button type="button"
+                    onclick="(window.abrirEditarJornada||function(){})(
+                        {{ $asistencia->id }},
+                        @js($asistencia->user->name),
+                        @js(\Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y')),
+                        @js($asistencia->hora_entrada ?? ''),
+                        @js($asistencia->hora_salida ?? '')
+                    )"
+                    title="Editar jornada" aria-label="Editar jornada"
+                    class="inline-flex items-center justify-center gap-1 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 bg-white dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg h-7 w-7 md:h-auto md:w-auto md:px-3 md:py-1.5 text-sm transition-colors">
+                <ion-icon name="create-outline" class="md:mr-1"></ion-icon>
+                <span class="hidden md:inline">Editar</span>
+            </button>
+
+            <a href="{{ route('admin.historial.reporte', $asistencia->user->id) }}"
+               title="Reporte" aria-label="Reporte"
+               class="inline-flex items-center justify-center gap-1 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg h-7 w-7 md:h-auto md:w-auto md:px-3 md:py-1.5 text-sm transition-colors no-underline">
+                <ion-icon name="document-outline" class="md:mr-1"></ion-icon>
+                <span class="hidden md:inline">Reporte</span>
+            </a>
+        </div>
     </td>
 </tr>

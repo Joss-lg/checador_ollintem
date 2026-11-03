@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Models\Asistencia;
-use App\Models\Pausa;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -39,14 +38,14 @@ class ForzarSalidaController extends Controller
             ], 422);
         }
 
-        // Cerrar pausa activa si la hay (no dejar datos colgados)
-        Pausa::where('asistencia_id', $asistencia->id)
-            ->whereNull('fin_pausa')
-            ->update(['fin_pausa' => now()->format('H:i:s')]);
+        // Igual que los demás cierres: nunca después de la hora fin oficial.
+        $finTurno   = Carbon::today()->setTimeFromTimeString(Asistencia::horaFinJornada());
+        $horaSalida = now()->gt($finTurno)
+            ? Asistencia::horaFinJornada()
+            : now()->format('H:i:s');
 
-        $asistencia->update([
-            'hora_salida' => now()->format('H:i:s'),
-        ]);
+        // Cierra también la pausa activa si la hay (no dejar datos colgados)
+        $asistencia->cerrar($horaSalida);
 
         return response()->json([
             'ok'      => true,

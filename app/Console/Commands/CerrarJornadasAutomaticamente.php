@@ -12,13 +12,13 @@ class CerrarJornadasAutomaticamente extends Command
 
     public function handle()
     {
-        $hoy       = now()->toDateString();
-        $horaCorte = config('asistencia.hora_corte_auto', '18:01:00');
+        $hoy     = now()->toDateString();
+        $horaFin = Asistencia::horaFinJornada();
 
-        $afectados = Asistencia::where('fecha', $hoy)
-            ->whereNull('hora_salida')
-            ->update(['hora_salida' => $horaCorte]);
+        // Cierra las de hoy y cualquier jornada olvidada de días anteriores,
+        // junto con sus pausas abiertas.
+        $afectados = Asistencia::cerrarAbiertas($hoy, $horaFin);
 
-        $this->info("Se cerraron automáticamente {$afectados} jornadas a las {$horaCorte}.");
+        $this->info("Se cerraron automáticamente {$afectados} jornadas a las {$horaFin}.");
     }
 }

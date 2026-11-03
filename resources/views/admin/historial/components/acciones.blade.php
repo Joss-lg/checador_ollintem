@@ -20,9 +20,9 @@
                 <div class="relative">
                     <input
                         type="date"
-                        name="fecha_inicio"
-                        id="fecha_inicio"
-                        value="{{ request('fecha_inicio') }}"
+                        name="desde"
+                        id="desde"
+                        value="{{ request('desde') }}"
                         onchange="this.form.submit()"
                         class="w-full rounded-xl bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-cyan-500/40 focus:border-blue-400 dark:focus:border-cyan-500/60 transition-all"
                         title="Fecha inicio"
@@ -32,9 +32,9 @@
                 <div class="relative">
                     <input
                         type="date"
-                        name="fecha_fin"
-                        id="fecha_fin"
-                        value="{{ request('fecha_fin') }}"
+                        name="hasta"
+                        id="hasta"
+                        value="{{ request('hasta') }}"
                         onchange="this.form.submit()"
                         class="w-full rounded-xl bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-cyan-500/40 focus:border-blue-400 dark:focus:border-cyan-500/60 transition-all"
                         title="Fecha fin"
@@ -48,13 +48,13 @@
         <div class="lg:col-span-4">
             <div class="flex flex-col sm:flex-row gap-2 sm:justify-end">
 
-                <a href="{{ route('admin.reportes.excel', array_merge(['user' => $user], request()->only(['fecha_inicio', 'fecha_fin']))) }}"
+                <a href="{{ route('admin.reportes.excel', array_merge(['user' => $user], request()->only(['desde', 'hasta']))) }}"
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 shadow-sm transition-colors">
                    <ion-icon name="document-text-outline" class="text-base"></ion-icon>
                     Exportar Excel
                 </a>
 
-                <a href="{{ route('admin.reportes.pdf.becario', array_merge(['user' => $user], request()->only(['fecha_inicio', 'fecha_fin']))) }}"
+                <a href="{{ route('admin.reportes.pdf.becario', array_merge(['user' => $user], request()->only(['desde', 'hasta']))) }}"
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 shadow-sm transition-colors">
                     <ion-icon name="document-text-outline" class="text-base"></ion-icon>
                     Exportar PDF

@@ -24,6 +24,16 @@
         return `${h}:${m}:${s}`;
     }
 
+    // Escapa texto que viene de datos de usuario antes de meterlo en innerHTML
+    function escaparHtml(texto) {
+        return String(texto ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function actualizarTexto(id, icono, texto) {
         const el = document.getElementById(id);
         if (!el) return;
@@ -160,7 +170,7 @@
                     <div class="w-8 h-8 rounded-full bg-gray-500/25 border border-gray-500 flex items-center justify-center text-cyan-400 font-bold text-xs flex-shrink-0">
                         ${a.user_inicial}
                     </div>
-                    <span class="text-gray-900 dark:text-white font-semibold text-sm">${a.user_name}</span>
+                    <span class="text-gray-900 dark:text-white font-semibold text-sm truncate min-w-0">${a.user_name}</span>
                 </div>
                 <span id="estado-card-${a.user_id}" class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${a.estado.clase}">
                     ${a.estado.texto}
@@ -244,6 +254,11 @@
                 const ahora = Date.now();
 
                 data.forEach(a => {
+                    // El nombre lo escribe un usuario: se escapa una sola vez aquí
+                    // porque las plantillas de fila/tarjeta lo insertan con innerHTML.
+                    a.user_name    = escaparHtml(a.user_name);
+                    a.user_inicial = escaparHtml(a.user_inicial);
+
                     usuariosServidor.push(String(a.user_id));
 
                     const prev = estadoAsistencias[a.user_id];
@@ -273,8 +288,8 @@
                     };
 
                     const deltaCalculado = (ahora - baseTime) / 1000;
-                    a.trabajado_segundos = pTrabajado + (!a.en_pausa && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
-                    a.pausas_segundos    = pPausas    + ( a.en_pausa && !a.turnoTerminado && !a.sin_registro ? deltaCalculado : 0);
+                    a.trabajado_segundos = pTrabajado + (!a.en_pausa && !a.turno_terminado && !a.sin_registro ? deltaCalculado : 0);
+                    a.pausas_segundos    = pPausas    + ( a.en_pausa && !a.turno_terminado && !a.sin_registro ? deltaCalculado : 0);
 
                     let fila = document.querySelector(`tr[data-user="${a.user_id}"]`);
                     if (!fila) tbody.appendChild(crearFila(a));

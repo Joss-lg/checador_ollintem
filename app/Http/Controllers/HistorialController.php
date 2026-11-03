@@ -51,6 +51,15 @@ class HistorialController extends Controller
         return view('admin.historial.index', compact('asistencias', 'meses'));
     }
 
+    public function show(Asistencia $asistencia)
+    {
+        $this->authorizeAdmin();
+
+        $asistencia->load(['user', 'pausas']);
+
+        return response()->json($asistencia);
+    }
+
     public function editarHoras(Request $request, Asistencia $asistencia)
     {
         $this->authorizeAdmin();
@@ -61,9 +70,13 @@ class HistorialController extends Controller
             'motivo'       => ['required', 'string', 'max:255'],
         ]);
 
+        // Se guarda quién corrigió, cuándo y por qué, para tener registro.
         $asistencia->update([
-            'hora_entrada' => $request->hora_entrada,
-            'hora_salida'  => $request->hora_salida ?: null,
+            'hora_entrada'      => $request->hora_entrada,
+            'hora_salida'       => $request->hora_salida ?: null,
+            'motivo_correccion' => $request->motivo,
+            'corregido_por'     => Auth::id(),
+            'corregido_at'      => now(),
         ]);
 
         return back()->with('success',
