@@ -17,6 +17,16 @@ class AsistenciaController extends Controller
     private static function horaCorte(): string   { return config('asistencia.hora_corte_auto',     '18:01:00'); }
 
     /**
+     * "18:00:00" → "6:00 p.m.", para que los mensajes sigan a config/asistencia.php.
+     */
+    private static function horaLegible(string $hora): string
+    {
+        $c = Carbon::createFromTimeString($hora);
+
+        return $c->format('g:i') . ($c->hour < 12 ? ' a.m.' : ' p.m.');
+    }
+
+    /**
      * Hora de salida a guardar: la actual, o la hora fin oficial si ya pasó.
      */
     private static function horaSalidaTopada(): string
@@ -39,14 +49,17 @@ class AsistenciaController extends Controller
         $pausaInicio = null;
         $segundosPausaAcumulados = 0;
 
+        // Las fechas van en formato ISO ("2026-11-03T09:00:00"): con espacio
+        // en vez de "T", Safari (iPhone) no las entiende y los cronómetros
+        // del panel se quedan en 00:00:00.
         if ($asistencia) {
-            $horaEntrada = $asistencia->fecha . ' ' . $asistencia->hora_entrada;
+            $horaEntrada = $asistencia->fecha . 'T' . $asistencia->hora_entrada;
 
             if ($asistencia->hora_salida) {
                 // Jornada de hoy ya cerrada: se muestra como terminada y no
                 // se permite registrar otra entrada el mismo día.
                 $estado     = 'terminado';
-                $horaSalida = $asistencia->fecha . ' ' . $asistencia->hora_salida;
+                $horaSalida = $asistencia->fecha . 'T' . $asistencia->hora_salida;
             } else {
                 $pausa = Pausa::where('asistencia_id', $asistencia->id)
                     ->whereNull('fin_pausa')
@@ -55,23 +68,15 @@ class AsistenciaController extends Controller
 
                 if ($pausa) {
                     $estado = 'pausado';
-                    $pausaInicio = $asistencia->fecha . ' ' . $pausa->inicio_pausa;
+                    $pausaInicio = $asistencia->fecha . 'T' . $pausa->inicio_pausa;
                 } else {
                     $estado = 'trabajando';
                 }
             }
 
-            // Sumar pausas terminadas de la jornada
-            $pausas = Pausa::where('asistencia_id', $asistencia->id)
-                ->whereNotNull('fin_pausa')
-                ->get();
-
-            foreach ($pausas as $p) {
-                $inicio = Carbon::parse($asistencia->fecha . ' ' . $p->inicio_pausa);
-                $fin    = Carbon::parse($asistencia->fecha . ' ' . $p->fin_pausa);
-                if ($fin->lt($inicio)) $fin->addDay();
-                $segundosPausaAcumulados += (int) $inicio->diffInSeconds($fin);
-            }
+            // Pausas terminadas, con el mismo cálculo (y recorte) que el
+            // historial; la pausa en curso la suma el JS en vivo.
+            $segundosPausaAcumulados = $asistencia->tiempoPausasSegundos(soloCerradas: true);
         }
 
         return view('becario.dashboard', [
@@ -95,7 +100,7 @@ class AsistenciaController extends Controller
         if ($horaActual->lt($inicioTurno) || $horaActual->gt($finTurno)) {
             return back()->with(
                 'error',
-                'El registro de entrada solo está permitido entre las 9:00 a.m. y las 6:00 p.m.'
+                'El registro de entrada solo está permitido entre las ' . self::horaLegible(self::horaInicio()) . ' y las ' . self::horaLegible(self::horaFin()) . '.'
             );
         }
 
@@ -171,14 +176,14 @@ class AsistenciaController extends Controller
                 if ($abiertas->isNotEmpty()) {
                     return back()->with(
                         'warning',
-                        'Al no registrar salida dentro del horario permitido, tu turno fue cerrado automáticamente a las 6:00 p.m.'
+                        'Al no registrar salida dentro del horario permitido, tu turno fue cerrado automáticamente a las ' . self::horaLegible(self::horaFin()) . '.'
                     );
                 }
             }
 
             return back()->with(
                 'error',
-                'El registro de salida debe realizarse entre las 9:00 a.m. y las 6:00 p.m.'
+                'El registro de salida debe realizarse entre las ' . self::horaLegible(self::horaInicio()) . ' y las ' . self::horaLegible(self::horaFin()) . '.'
             );
         }
 

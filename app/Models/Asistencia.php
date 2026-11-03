@@ -101,7 +101,11 @@ class Asistencia extends Model
         return gmdate("H:i:s", $segundos);
     }
 
-    public function tiempoPausasSegundos()
+    /**
+     * @param bool $soloCerradas  true = ignora la pausa en curso (el panel
+     *                            del becario la cuenta en vivo con JS).
+     */
+    public function tiempoPausasSegundos(bool $soloCerradas = false)
     {
         // Solo cuenta la parte de cada pausa que cae dentro de la jornada
         // [entrada, salida]. Así, si el admin corrige la salida a una hora
@@ -113,7 +117,7 @@ class Asistencia extends Model
 
         $segundos = 0;
         foreach ($this->pausas as $pausa) {
-            if (!$pausa->inicio_pausa) {
+            if (!$pausa->inicio_pausa || ($soloCerradas && !$pausa->fin_pausa)) {
                 continue;
             }
             $inicio = Carbon::parse($this->fecha . ' ' . $pausa->inicio_pausa);
@@ -141,6 +145,11 @@ class Asistencia extends Model
     public function pausas()
     {
         return $this->hasMany(Pausa::class, 'asistencia_id');
+    }
+
+    public function correcciones()
+    {
+        return $this->hasMany(CorreccionAsistencia::class)->latest();
     }
 
         public function tienePausaActiva()
@@ -200,6 +209,9 @@ class Asistencia extends Model
         if (!$buscar) {
             return $query;
         }
+
+        // % y _ son comodines de LIKE: se escapan para buscar el texto literal
+        $buscar = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $buscar);
 
         return $query->whereHas('user', function ($q) use ($buscar) {
             $q->where('name', 'like', "%{$buscar}%")

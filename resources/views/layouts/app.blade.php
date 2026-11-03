@@ -43,14 +43,15 @@
     </script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Checador') }}</title>
+    {{-- Lo leen las peticiones fetch del panel del becario (X-CSRF-TOKEN) --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/sass/app.scss', 'resources/js/app.js',])
     <style>[x-cloak] { display: none !important; }</style>
 
 </head>
 
 <body x-data="{ 
-    isDark: localStorage.theme === 'dark' || (!('theme' in localStorage && window.matchMedia('(prefers-color-scheme: dark)').matches)),
+    isDark: localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
     toggleTheme() {
         this.isDark = !this.isDark;
         if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.theme = 'dark'; }

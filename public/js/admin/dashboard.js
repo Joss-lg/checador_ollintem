@@ -4,7 +4,8 @@
     // =========================================================================
     // CONFIGURACIÓN
     // =========================================================================
-    const POLLING_MS = 1750;
+    const POLLING_MS        = 1750;
+    const POLLING_OCULTO_MS = 5 * 60 * 1000;
     const TICK_MS    = 1000;
 
     // =========================================================================
@@ -238,10 +239,25 @@
     // =========================================================================
     // SINCRONIZACIÓN CON EL SERVIDOR
     // =========================================================================
+    // 401/419 = la sesión expiró: se recarga para que el admin vuelva a
+    // iniciar sesión en vez de quedarse viendo datos congelados.
+    function sesionExpirada(r) {
+        if (r.status === 401 || r.status === 419) {
+            window.location.reload();
+            return true;
+        }
+        return false;
+    }
+
     function sincronizar() {
-        fetch(window.RUTAS.tiempos)
-            .then(r => r.json())
+        fetch(window.RUTAS.tiempos, { headers: { 'Accept': 'application/json' } })
+            .then(r => {
+                if (sesionExpirada(r)) return null;
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
             .then(data => {
+                if (!data) return;
                 const usuariosServidor = [];
                 const tbody            = document.getElementById('tabla-asistencias');
                 const vacioTabla       = document.getElementById('tabla-vacia');
@@ -405,11 +421,13 @@
             method:  'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept':       'application/json',
                 'X-CSRF-TOKEN': window.RUTAS.csrf,
             },
         })
-        .then(r => r.json())
+        .then(r => (sesionExpirada(r) ? null : r.json()))
         .then(res => {
+            if (!res) return;
             cerrarModal();
             mostrarToast(res.ok, res.mensaje);
             if (res.ok) sincronizar();   // refresca la tabla inmediatamente
@@ -421,13 +439,15 @@
     // =========================================================================
     // POLLING Y ARRANQUE
     // =========================================================================
-    function iniciarPolling() {
+    function iniciarPolling(intervalo = POLLING_MS) {
         clearInterval(intervaloSincronizacion);
-        intervaloSincronizacion = setInterval(sincronizar, POLLING_MS);
+        intervaloSincronizacion = setInterval(sincronizar, intervalo);
     }
 
+    // Con la pestaña oculta se consulta cada 5 min en vez de detenerse:
+    // así la sesión del admin no expira mientras deja el panel abierto.
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) clearInterval(intervaloSincronizacion);
+        if (document.hidden) iniciarPolling(POLLING_OCULTO_MS);
         else { sincronizar(); iniciarPolling(); }
     });
 

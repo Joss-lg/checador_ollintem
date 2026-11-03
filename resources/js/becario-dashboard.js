@@ -170,6 +170,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // EVENTOS DE LOS MODALES (ACCIONES)
     // ==========================================
 
+    // Si el navegador restaura esta página desde su caché al usar "Atrás"
+    // (bfcache), los botones seguirían desactivados y el estado podría estar
+    // viejo: se recarga para traer el estado real de la jornada.
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) window.location.reload();
+    });
+
     // Evita el doble envío: al mandar cualquier formulario se desactivan
     // sus botones, para que un doble clic no cree registros duplicados.
     document.querySelectorAll('form').forEach((form) => {

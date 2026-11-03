@@ -17,30 +17,11 @@ class HomeController extends Controller
 
     public function index()
     {
+        $this->authorizeAdmin();
+
         // Listado general de usuarios para la vista de administración
         $usuarios = User::all();
         return view('home', compact('usuarios'));
-    }
-
-    public function storeUser(Request $request)
-    {
-        $this->authorizeAdmin();
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => 'required|in:admin,becario',
-        ]);
-
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-        ]);
-
-        return back()->with('success', 'Usuario creado correctamente.');
     }
 
     public function deleteUser($id)

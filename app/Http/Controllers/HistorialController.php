@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Models\Asistencia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class HistorialController extends Controller
 {
@@ -47,15 +48,6 @@ class HistorialController extends Controller
         return view('admin.historial.index', compact('asistencias', 'meses', 'stats'));
     }
 
-    public function show(Asistencia $asistencia)
-    {
-        $this->authorizeAdmin();
-
-        $asistencia->load(['user', 'pausas']);
-
-        return response()->json($asistencia);
-    }
-
     public function editarHoras(Request $request, Asistencia $asistencia)
     {
         $this->authorizeAdmin();
@@ -66,14 +58,27 @@ class HistorialController extends Controller
             'motivo'       => ['required', 'string', 'max:255'],
         ]);
 
-        // Se guarda quién corrigió, cuándo y por qué, para tener registro.
-        $asistencia->update([
-            'hora_entrada'      => $request->hora_entrada,
-            'hora_salida'       => $request->hora_salida ?: null,
-            'motivo_correccion' => $request->motivo,
-            'corregido_por'     => Auth::id(),
-            'corregido_at'      => now(),
-        ]);
+        DB::transaction(function () use ($request, $asistencia) {
+            // Bitácora: cada corrección queda guardada con las horas de antes
+            // y de después (las columnas de abajo solo guardan la última).
+            $asistencia->correcciones()->create([
+                'corregido_por'   => Auth::id(),
+                'entrada_antes'   => $asistencia->hora_entrada,
+                'salida_antes'    => $asistencia->hora_salida,
+                'entrada_despues' => $request->hora_entrada,
+                'salida_despues'  => $request->hora_salida ?: null,
+                'motivo'          => $request->motivo,
+            ]);
+
+            // Se guarda quién corrigió, cuándo y por qué, para tener registro.
+            $asistencia->update([
+                'hora_entrada'      => $request->hora_entrada,
+                'hora_salida'       => $request->hora_salida ?: null,
+                'motivo_correccion' => $request->motivo,
+                'corregido_por'     => Auth::id(),
+                'corregido_at'      => now(),
+            ]);
+        });
 
         return back()->with('success',
             "Jornada del {$asistencia->fecha} corregida. Motivo: {$request->motivo}"

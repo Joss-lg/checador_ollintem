@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers\Reportes;
 
+use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Asistencia;
 use App\Services\ReporteService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use App\Services\Excel\HistorialBecarioExcel;
 use App\Services\Excel\HistorialGeneralExcel;
-use Carbon\Carbon;
 
 class ExcelController extends Controller
 {
+    use AuthorizesAdmin;
+
     protected ReporteService $reporteService;
 
     public function __construct(ReporteService $reporteService)
@@ -25,6 +28,8 @@ class ExcelController extends Controller
      */
     public function reporteBecario(User $user, Request $request)
     {
+        $this->authorizeAdmin();
+
         $desde = $request->input('desde');
         $hasta = $request->input('hasta');
 
@@ -39,17 +44,14 @@ class ExcelController extends Controller
         $resumen = $this->reporteService->obtenerResumen($asistencias);
 
         // Nombre y ruta temporal del archivo
+        // Str::slug quita acentos, "/" y otros caracteres que romperían la ruta
         $nombreArchivo = 'Reporte_' .
-            str_replace(' ', '_', $user->name) .
+            Str::slug($user->name, '_') .
             '_' .
             now()->format('Ymd_His') .
             '.xlsx';
 
-        $ruta = storage_path('app/temp/' . $nombreArchivo);
-
-        if (!file_exists(storage_path('app/temp'))) {
-            mkdir(storage_path('app/temp'), 0777, true);
-        }
+        $ruta = $this->rutaTemporal($nombreArchivo);
 
         // Generar Excel con diseño OllinCheck
         $excel = new HistorialBecarioExcel();
@@ -72,6 +74,8 @@ class ExcelController extends Controller
      */
     public function historialGeneral(Request $request)
     {
+        $this->authorizeAdmin();
+
         $buscar = $request->input('search');
         $mes = $request->input('mes');
         $semana = $request->input('semana');
@@ -87,11 +91,7 @@ class ExcelController extends Controller
         $resumen = $this->reporteService->obtenerResumen($asistencias);
 
         $nombreArchivo = 'Historial_General_' . now()->format('Ymd_His') . '.xlsx';
-        $ruta = storage_path('app/temp/' . $nombreArchivo);
-
-        if (!file_exists(storage_path('app/temp'))) {
-            mkdir(storage_path('app/temp'), 0777, true);
-        }
+        $ruta = $this->rutaTemporal($nombreArchivo);
 
         // Generar Excel General con diseño OllinCheck
         $excel = new HistorialGeneralExcel();
@@ -107,5 +107,20 @@ class ExcelController extends Controller
         );
 
         return response()->download($ruta)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Ruta en storage/app/temp; crea la carpeta si no existe, con permisos
+     * 0755 (antes 0777 dejaba la carpeta escribible para cualquier usuario).
+     */
+    private function rutaTemporal(string $nombreArchivo): string
+    {
+        $carpeta = storage_path('app/temp');
+
+        if (!is_dir($carpeta)) {
+            mkdir($carpeta, 0755, true);
+        }
+
+        return $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo;
     }
 }

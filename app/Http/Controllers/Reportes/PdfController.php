@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Reportes;
 
+use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Asistencia;
 use App\Services\ReporteService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PdfController extends Controller
 {
+    use AuthorizesAdmin;
+
     protected ReporteService $reporteService;
 
     public function __construct(ReporteService $reporteService)
@@ -25,6 +29,8 @@ class PdfController extends Controller
     */
     public function general(Request $request)
     {
+        $this->authorizeAdmin();
+
         // Mismos filtros y orden que la pantalla del historial
         $asistencias = Asistencia::query()
             ->with(['user', 'pausas'])
@@ -49,6 +55,8 @@ class PdfController extends Controller
     */
     public function becario(Request $request, User $user)
     {
+        $this->authorizeAdmin();
+
         $asistencias = $this->reporteService->obtenerReporteBecario(
             $user,
             $request->input('desde'),
@@ -62,6 +70,6 @@ class PdfController extends Controller
             compact('user', 'asistencias', 'resumen')
         );
 
-        return $pdf->download('reporte-' . str_replace(' ', '_', $user->name) . '.pdf');
+        return $pdf->download('reporte-' . Str::slug($user->name) . '.pdf');
     }
 }

@@ -32,6 +32,8 @@ public function logout(Request $request)
 {
     Auth::guard()->logout();
     $request->session()->invalidate();
+    // Token CSRF nuevo para que el de la sesión cerrada ya no sirva
+    $request->session()->regenerateToken();
     return redirect('/login'); // Aquí fuerzas a que vuelva al login
 }
 }

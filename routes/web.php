@@ -30,7 +30,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/historial', [HistorialController::class, 'index'])->name('admin.historial');
     Route::patch('/admin/historial/{asistencia}/editar-horas', [HistorialController::class, 'editarHoras'])->name('admin.historial.editar-horas');
     Route::get('/admin/historial/reporte/{user}', [ReporteController::class, 'show'])->name('admin.historial.reporte');
-    Route::get('/admin/historial/{asistencia}', [HistorialController::class, 'show'])->name('admin.historial.show');
     Route::get('/admin/reportes/{user}/excel', [ExcelController::class, 'reporteBecario'])->name('admin.reportes.excel');
     Route::get('/admin/reportes/excel/general', [ExcelController::class, 'historialGeneral'])->name('admin.reportes.general.excel');
     Route::get('/admin/reportes/pdf/general', [PdfController::class, 'general'])->name('admin.reportes.pdf.general');
@@ -43,7 +42,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/user/{id}', [HomeController::class, 'update'])->name('users.update');
     Route::post('/admin/becarios/store', [AdminController::class, 'storeBecario'])->name('admin.becarios.store');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-    Route::post('/home/user/store', [HomeController::class, 'storeUser'])->name('users.store');
     Route::post('/home/user/toggle/{id}', [HomeController::class, 'toggleAdmin'])->name('users.toggle');
     Route::delete('/home/user/{id}', [HomeController::class, 'deleteUser'])->name('users.delete');
 });

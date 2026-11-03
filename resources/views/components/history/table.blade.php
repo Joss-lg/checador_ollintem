@@ -42,5 +42,4 @@
             </tbody>
         </table>
     </div>
-    @include('components.history.modal')
 </div>
