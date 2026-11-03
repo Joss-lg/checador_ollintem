@@ -9,6 +9,7 @@
         @include('admin.historial.components.resumen')
         @include('admin.historial.components.acciones')
         @include('admin.historial.components.tabla')
+        @include('admin.historial.components.correcciones')
 
     </div>
 

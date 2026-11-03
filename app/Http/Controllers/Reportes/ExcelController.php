@@ -66,7 +66,7 @@ class ExcelController extends Controller
             ]
         );
 
-        return response()->download($ruta)->deleteFileAfterSend(true);
+        return response()->download($ruta, $nombreArchivo)->deleteFileAfterSend(true);
     }
 
     /**
@@ -106,12 +106,15 @@ class ExcelController extends Controller
             ]
         );
 
-        return response()->download($ruta)->deleteFileAfterSend(true);
+        return response()->download($ruta, $nombreArchivo)->deleteFileAfterSend(true);
     }
 
     /**
      * Ruta en storage/app/temp; crea la carpeta si no existe, con permisos
      * 0755 (antes 0777 dejaba la carpeta escribible para cualquier usuario).
+     * El archivo en disco lleva un sufijo aleatorio para que dos descargas en
+     * el mismo segundo no compartan archivo; el nombre que ve el usuario es
+     * $nombreArchivo (se pasa aparte a download()).
      */
     private function rutaTemporal(string $nombreArchivo): string
     {
@@ -121,6 +124,6 @@ class ExcelController extends Controller
             mkdir($carpeta, 0755, true);
         }
 
-        return $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo;
+        return $carpeta . DIRECTORY_SEPARATOR . Str::random(8) . '_' . $nombreArchivo;
     }
 }

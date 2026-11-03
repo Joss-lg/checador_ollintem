@@ -12,13 +12,13 @@ class CerrarJornadasAutomaticamente extends Command
 
     public function handle()
     {
-        $hoy     = now()->toDateString();
-        $horaFin = Asistencia::horaFinJornada();
+        $hoy = now()->toDateString();
 
         // Cierra las de hoy y cualquier jornada olvidada de días anteriores,
-        // junto con sus pausas abiertas.
-        $afectados = Asistencia::cerrarAbiertas($hoy, $horaFin);
+        // junto con sus pausas abiertas. Cada una a la última actividad del
+        // becario o, si no hay registro, a la hora fin oficial.
+        $afectados = Asistencia::cerrarAbiertas($hoy);
 
-        $this->info("Se cerraron automáticamente {$afectados} jornadas a las {$horaFin}.");
+        $this->info("Se cerraron automáticamente {$afectados} jornadas.");
     }
 }

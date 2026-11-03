@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class Asistencia extends Model
@@ -45,24 +46,68 @@ class Asistencia extends Model
     }
 
     /**
-     * Cierre masivo de jornadas abiertas con fecha <= $hastaFecha
-     * (usado por el comando programado y el middleware de cierre).
+     * Guarda la última vez que el panel del becario se comunicó con el
+     * servidor (cada consulta automática del panel). Se usa para que el
+     * cierre automático no cuente como trabajadas las horas en las que el
+     * becario ya había cerrado la pestaña o el navegador.
      */
-    public static function cerrarAbiertas(string $hastaFecha, string $horaSalida): int
+    public static function registrarActividad(int $userId): void
     {
-        $ids = static::whereNull('hora_salida')
-            ->where('fecha', '<=', $hastaFecha)
-            ->pluck('id');
+        Cache::put(
+            self::llaveActividad($userId, now()->toDateString()),
+            now()->format('H:i:s'),
+            now()->addDays(2)
+        );
+    }
 
-        if ($ids->isEmpty()) {
-            return 0;
+    private static function llaveActividad(int $userId, string $fecha): string
+    {
+        return "actividad:{$userId}:{$fecha}";
+    }
+
+    /**
+     * Hora de salida para un cierre automático: la última actividad del
+     * becario ese día si fue antes de la hora fin; si no hay registro (o es
+     * posterior), la hora fin oficial.
+     */
+    public function horaCierreAutomatico(): string
+    {
+        $horaFin = self::horaFinJornada();
+        $visto   = Cache::get(self::llaveActividad($this->user_id, $this->fecha));
+
+        // Las horas "H:i:s" se pueden comparar como texto
+        if ($visto && $visto < $horaFin && (!$this->hora_entrada || $visto >= $this->hora_entrada)) {
+            return $visto;
         }
 
-        Pausa::whereIn('asistencia_id', $ids)
-            ->whereNull('fin_pausa')
-            ->update(['fin_pausa' => $horaSalida]);
+        return $horaFin;
+    }
 
-        return static::whereIn('id', $ids)->update(['hora_salida' => $horaSalida]);
+    /**
+     * Cierra la jornada con la hora de cierre automático y la devuelve.
+     */
+    public function cerrarAutomaticamente(): string
+    {
+        $hora = $this->horaCierreAutomatico();
+        $this->cerrar($hora);
+
+        return $hora;
+    }
+
+    /**
+     * Cierre masivo de jornadas abiertas con fecha <= $hastaFecha
+     * (usado por el comando programado y el middleware de cierre). Cada
+     * jornada se cierra con su propia hora (ver horaCierreAutomatico()).
+     */
+    public static function cerrarAbiertas(string $hastaFecha): int
+    {
+        $abiertas = static::whereNull('hora_salida')
+            ->where('fecha', '<=', $hastaFecha)
+            ->get();
+
+        $abiertas->each->cerrarAutomaticamente();
+
+        return $abiertas->count();
     }
 
     /**

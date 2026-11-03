@@ -33,7 +33,7 @@
                             <td class="pl-3 sm:pl-4 py-3 text-[0.8rem] sm:text-base">
                                 <div class="flex items-center gap-2">
                                     <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#F4F0E6] dark:bg-white/10 border border-[#EAE4D8] dark:border-white/10 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-[0.75rem] sm:text-[0.9rem] flex-shrink-0">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
                                     </div>
                                     <span class="text-gray-800 dark:text-gray-100 font-medium truncate max-w-[120px] sm:max-w-none block">{{ $user->name }}</span>
                                 </div>
@@ -52,13 +52,13 @@
                                     <button type="button"
                                             class="w-7 h-7 sm:w-[34px] sm:h-[34px] rounded-full p-0 inline-flex items-center justify-center border-none text-white text-[0.75rem] sm:text-[0.95rem] transition-all duration-200 bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-[0_2px_6px_rgba(8,145,178,0.3)] hover:text-white hover:-translate-y-[2px] hover:scale-[1.05] hover:shadow-[0_4px_12px_rgba(8,145,178,0.4)] focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:focus:ring-cyan-400/50"
                                             title="Editar"
-                                            onclick="prepararEdicion('{{ $user->id }}', '{{ addslashes($user->name) }}', '{{ $user->role }}', '{{ $user->email }}')">
+                                            onclick="prepararEdicion({{ $user->id }}, @js($user->name), @js($user->role), @js($user->email))">
                                         <ion-icon name="pencil"></ion-icon>
                                     </button>
 
                                     @if($user->id != 1)
                                     <button type="button"
-                                            onclick="confirmarEliminar({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                            onclick="confirmarEliminar({{ $user->id }}, @js($user->name))"
                                             class="w-7 h-7 sm:w-[34px] sm:h-[34px] rounded-full p-0 inline-flex items-center justify-center border-none text-white text-[0.75rem] sm:text-[0.95rem] transition-all duration-200 bg-gradient-to-br from-red-500 to-red-600 shadow-[0_2px_6px_rgba(220,38,38,0.3)] hover:text-white hover:-translate-y-[2px] hover:scale-[1.05] hover:shadow-[0_4px_12px_rgba(220,38,38,0.4)] focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-400/50"
                                             title="Eliminar">
                                         <ion-icon name="trash"></ion-icon>

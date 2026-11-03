@@ -38,6 +38,8 @@ class AsistenciaController extends Controller
 
     public function index()
     {
+        Asistencia::registrarActividad(Auth::id());
+
         $asistencia = Asistencia::where('user_id', Auth::id())
             ->where('fecha', now()->toDateString())
             ->latest()
@@ -122,7 +124,7 @@ class AsistenciaController extends Controller
             Asistencia::where('user_id', Auth::id())
                 ->whereNull('hora_salida')
                 ->get()
-                ->each->cerrar(self::horaFin());
+                ->each->cerrarAutomaticamente();
 
             Asistencia::create([
                 'user_id'      => Auth::id(),
@@ -171,6 +173,8 @@ class AsistenciaController extends Controller
                     ->whereNull('hora_salida')
                     ->get();
 
+                // Aquí el becario sí está presente (acaba de presionar el
+                // botón), así que se cierra a la hora fin oficial.
                 $abiertas->each->cerrar(self::horaFin());
 
                 if ($abiertas->isNotEmpty()) {
@@ -293,6 +297,9 @@ class AsistenciaController extends Controller
 
     public function estadoJornada()
     {
+        // Cada consulta del panel cuenta como "el becario sigue aquí"
+        Asistencia::registrarActividad(Auth::id());
+
         $asistencia = Asistencia::where('user_id', Auth::id())
             ->where('fecha', today()->toDateString())
             ->latest()

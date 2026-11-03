@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reportes;
 
 use App\Http\Controllers\Concerns\AuthorizesAdmin;
 use App\Http\Controllers\Controller;
+use App\Models\CorreccionAsistencia;
 use App\Models\User;
 use App\Services\ReporteService;
 use Illuminate\Http\Request;
@@ -34,12 +35,19 @@ class ReporteController extends Controller
         // Obtener el resumen general de la jornada y pausas
         $resumen = $this->reporteService->obtenerResumen($asistencias);
 
+        // Bitácora de correcciones de las jornadas mostradas (más recientes primero)
+        $correcciones = CorreccionAsistencia::with(['asistencia', 'admin'])
+            ->whereIn('asistencia_id', $asistencias->pluck('id'))
+            ->latest()
+            ->get();
+
         return view(
             'admin.historial.reporte',
             [
-                'user'        => $user,
-                'asistencias' => $asistencias,
-                'resumen'     => $resumen,
+                'user'         => $user,
+                'asistencias'  => $asistencias,
+                'resumen'      => $resumen,
+                'correcciones' => $correcciones,
             ]
         );
     }

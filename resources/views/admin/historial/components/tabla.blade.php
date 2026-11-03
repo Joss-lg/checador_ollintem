@@ -61,10 +61,10 @@
                         <button type="button"
                                 onclick="(window.abrirEditarJornada||function(){})(
                                     {{ $asistencia->id }},
-                                    '{{ addslashes($asistencia->user->name) }}',
-                                    '{{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}',
-                                    '{{ $asistencia->hora_entrada ?? '' }}',
-                                    '{{ $asistencia->hora_salida ?? '' }}'
+                                    @js($asistencia->user->name),
+                                    @js(\Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y')),
+                                    @js($asistencia->hora_entrada ?? ''),
+                                    @js($asistencia->hora_salida ?? '')
                                 )"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors">
                             <ion-icon name="create-outline"></ion-icon>
@@ -105,10 +105,10 @@
                         <button type="button"
                                 onclick="(window.abrirEditarJornada||function(){})(
                                     {{ $asistencia->id }},
-                                    '{{ addslashes($asistencia->user->name) }}',
-                                    '{{ \Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y') }}',
-                                    '{{ $asistencia->hora_entrada ?? '' }}',
-                                    '{{ $asistencia->hora_salida ?? '' }}'
+                                    @js($asistencia->user->name),
+                                    @js(\Carbon\Carbon::parse($asistencia->fecha)->format('d/m/Y')),
+                                    @js($asistencia->hora_entrada ?? ''),
+                                    @js($asistencia->hora_salida ?? '')
                                 )"
                                 class="inline-flex items-center p-1.5 rounded-lg border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
                                 title="Editar jornada">

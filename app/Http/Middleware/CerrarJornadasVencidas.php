@@ -62,8 +62,9 @@ class CerrarJornadasVencidas
 
         Cache::put($llave, true, now()->addMinutes(2));
 
-        // Se guarda la hora fin oficial (18:00), no la hora de corte (18:01),
-        // igual que en el resto del sistema. También cierra las pausas abiertas.
-        Asistencia::cerrarAbiertas($hastaFecha, Asistencia::horaFinJornada());
+        // Cada jornada se cierra a la última actividad del becario o, si no
+        // hay registro, a la hora fin oficial (18:00, no la de corte 18:01).
+        // También cierra las pausas abiertas.
+        Asistencia::cerrarAbiertas($hastaFecha);
     }
 }
