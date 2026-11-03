@@ -16,4 +16,15 @@ return [
     // haya quedado abierta (comando asistencias:cerrar-automatico).
     'hora_corte_auto' => env('ASISTENCIA_HORA_CORTE_AUTO', '18:01:00'),
 
+    // Cierre automático por última actividad: si el último aviso del panel
+    // del becario fue a esta cantidad de minutos (o menos) de la hora fin,
+    // se cierra a la hora fin. Cubre los avisos espaciados (cada 5 min) de
+    // una pestaña oculta.
+    'margen_cierre_minutos' => (int) env('ASISTENCIA_MARGEN_CIERRE_MINUTOS', 10),
+
+    // Minutos sin avisos del panel para mostrar al becario como
+    // "Sin conexión" en el dashboard del admin (la pestaña oculta avisa
+    // cada 5 min, así que debe ser mayor a 5).
+    'minutos_sin_conexion' => (int) env('ASISTENCIA_MINUTOS_SIN_CONEXION', 7),
+
 ];

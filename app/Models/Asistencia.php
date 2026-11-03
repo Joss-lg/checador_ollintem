@@ -66,21 +66,36 @@ class Asistencia extends Model
     }
 
     /**
+     * Última hora ("H:i:s") en que el panel del becario avisó que seguía
+     * abierto el día de esta jornada, o null si no hay registro.
+     */
+    public function ultimaActividad(): ?string
+    {
+        return Cache::get(self::llaveActividad($this->user_id, $this->fecha));
+    }
+
+    /**
      * Hora de salida para un cierre automático: la última actividad del
-     * becario ese día si fue antes de la hora fin; si no hay registro (o es
-     * posterior), la hora fin oficial.
+     * becario ese día si fue antes de la hora fin; si no hay registro, si es
+     * posterior o si quedó dentro del margen final (config
+     * asistencia.margen_cierre_minutos), la hora fin oficial.
      */
     public function horaCierreAutomatico(): string
     {
         $horaFin = self::horaFinJornada();
-        $visto   = Cache::get(self::llaveActividad($this->user_id, $this->fecha));
+        $visto   = $this->ultimaActividad();
 
-        // Las horas "H:i:s" se pueden comparar como texto
-        if ($visto && $visto < $horaFin && (!$this->hora_entrada || $visto >= $this->hora_entrada)) {
-            return $visto;
+        if (!$visto || ($this->hora_entrada && $visto < $this->hora_entrada)) {
+            return $horaFin;
         }
 
-        return $horaFin;
+        // Con la pestaña oculta el panel avisa cada 5 min: un último aviso a
+        // pocos minutos de la hora fin cuenta como que trabajó hasta el final.
+        $margen      = (int) config('asistencia.margen_cierre_minutos', 10);
+        $inicioMargen = Carbon::createFromTimeString($horaFin)->subMinutes($margen)->format('H:i:s');
+
+        // Las horas "H:i:s" se pueden comparar como texto
+        return $visto < $inicioMargen ? $visto : $horaFin;
     }
 
     /**
@@ -126,17 +141,21 @@ class Asistencia extends Model
             : Carbon::parse($this->fecha . ' ' . self::horaFinJornada());
     }
 
-    public function tiempoTrabajado()
+    /**
+     * @param Carbon|null $hasta  Fin a usar para una jornada abierta en vez de
+     *                            "ahora" (p. ej. la última actividad del becario).
+     */
+    public function tiempoTrabajado(?Carbon $hasta = null)
     {
         if (!$this->hora_entrada) {
            return 0;
         }
 
         $entrada = Carbon::parse($this->fecha . ' ' . $this->hora_entrada);
-        $salida  = $this->finReferencia();
+        $salida  = $hasta ?? $this->finReferencia();
 
         $totalBruto = max(0, (int) $entrada->diffInSeconds($salida, false));
-        $pausas = $this->tiempoPausasSegundos();
+        $pausas = $this->tiempoPausasSegundos(hasta: $hasta);
         
         return max(0, $totalBruto - $pausas);
     }
@@ -149,8 +168,9 @@ class Asistencia extends Model
     /**
      * @param bool $soloCerradas  true = ignora la pausa en curso (el panel
      *                            del becario la cuenta en vivo con JS).
+     * @param Carbon|null $hasta  Fin de jornada a usar en vez de finReferencia().
      */
-    public function tiempoPausasSegundos(bool $soloCerradas = false)
+    public function tiempoPausasSegundos(bool $soloCerradas = false, ?Carbon $hasta = null)
     {
         // Solo cuenta la parte de cada pausa que cae dentro de la jornada
         // [entrada, salida]. Así, si el admin corrige la salida a una hora
@@ -158,7 +178,7 @@ class Asistencia extends Model
         $inicioJornada = $this->hora_entrada
             ? Carbon::parse($this->fecha . ' ' . $this->hora_entrada)
             : null;
-        $finJornada = $this->finReferencia();
+        $finJornada = $hasta ?? $this->finReferencia();
 
         $segundos = 0;
         foreach ($this->pausas as $pausa) {

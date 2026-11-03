@@ -29,7 +29,9 @@
                 </div>
             </div>
 
-            <div x-show="vista === 'calendario'">
+            {{-- x-cloak en las dos vistas: ninguna aparece hasta que Alpine sabe
+                 cuál eligió el admin (evita ver el calendario un instante) --}}
+            <div x-show="vista === 'calendario'" x-cloak>
                 @include('admin.historial.components.calendario')
             </div>
             <div x-show="vista === 'lista'" x-cloak>

@@ -282,8 +282,12 @@
                     let pTrabajado = a.trabajado_segundos;
                     let pPausas    = a.pausas_segundos;
 
+                    // Sin conexión = el becario cerró la pestaña: el servidor ya
+                    // manda sus tiempos hasta la última actividad y no deben correr.
+                    const congelado = a.turno_terminado || a.sin_registro || !!a.sin_conexion;
+
                     // Anti-jumping: si el estado no cambió, mantenemos base local
-                    if (prev && prev.enPausa === a.en_pausa && prev.turnoTerminado === a.turno_terminado) {
+                    if (!congelado && prev && !prev.congelado && prev.enPausa === a.en_pausa && prev.turnoTerminado === a.turno_terminado) {
                         const deltaPrev         = (ahora - prev.lastSync) / 1000;
                         const trabajadoEstimado = prev.baseTrabajado + (!a.en_pausa ? deltaPrev : 0);
                         if (Math.abs(trabajadoEstimado - a.trabajado_segundos) < 5) {
@@ -300,12 +304,13 @@
                         enPausa:        a.en_pausa,
                         turnoTerminado: a.turno_terminado,
                         sinRegistro:    a.sin_registro,
+                        congelado:      congelado,
                         userName:       a.user_name,
                     };
 
                     const deltaCalculado = (ahora - baseTime) / 1000;
-                    a.trabajado_segundos = pTrabajado + (!a.en_pausa && !a.turno_terminado && !a.sin_registro ? deltaCalculado : 0);
-                    a.pausas_segundos    = pPausas    + ( a.en_pausa && !a.turno_terminado && !a.sin_registro ? deltaCalculado : 0);
+                    a.trabajado_segundos = pTrabajado + (!a.en_pausa && !congelado ? deltaCalculado : 0);
+                    a.pausas_segundos    = pPausas    + ( a.en_pausa && !congelado ? deltaCalculado : 0);
 
                     let fila = document.querySelector(`tr[data-user="${a.user_id}"]`);
                     if (!fila) tbody.appendChild(crearFila(a));
@@ -342,7 +347,7 @@
         const ahora = Date.now();
         Object.keys(estadoAsistencias).forEach(userId => {
             const e = estadoAsistencias[userId];
-            if (e.turnoTerminado || e.sinRegistro) return;
+            if (e.congelado) return;
             const delta      = (ahora - e.lastSync) / 1000;
             const tTrabajado = e.baseTrabajado + (e.enPausa ? 0 : delta);
             const tPausas    = e.basePausas    + (e.enPausa ? delta : 0);

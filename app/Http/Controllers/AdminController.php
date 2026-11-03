@@ -102,8 +102,19 @@ class AdminController extends Controller
             $enPausa = $a->tienePausaActiva();
             $turnoTerminado = (bool) $a->hora_salida;
 
+            // Jornada abierta cuyo panel dejó de avisar hace rato: el becario
+            // cerró la pestaña o el navegador. Sus tiempos se calculan hasta
+            // su última actividad, que es la hora a la que se cerrará sola.
+            $visto       = $turnoTerminado ? null : $a->ultimaActividad();
+            $limite      = now()->subMinutes((int) config('asistencia.minutos_sin_conexion', 7))->format('H:i:s');
+            $sinConexion = $visto !== null && $visto < $limite;
+            $hasta       = $sinConexion ? Carbon::parse($a->fecha . ' ' . $visto) : null;
+
             if ($turnoTerminado) {
                 $estado = ['texto' => 'Turno terminado', 'clase' => 'badge-terminado', 'style' => ''];
+            } elseif ($sinConexion) {
+                $estado = ['texto' => 'Sin conexión desde ' . $hasta->format('g:i') . ($hasta->hour < 12 ? ' a.m.' : ' p.m.'),
+                           'clase' => 'badge-sin-conexion', 'style' => ''];
             } elseif ($enPausa) {
                 $estado = ['texto' => 'En descanso',     'clase' => 'badge-descanso',  'style' => ''];
             } else {
@@ -118,10 +129,11 @@ class AdminController extends Controller
                 'fecha'               => Carbon::parse($a->fecha)->format('d/m/Y'),
                 'hora_entrada'        => $a->hora_entrada ? Carbon::parse($a->hora_entrada)->format('h:i A') : '--:--',
                 'hora_salida'         => $a->hora_salida ? Carbon::parse($a->hora_salida)->format('h:i A') : '---',
-                'pausas_segundos'     => $a->tiempoPausasSegundos(),
-                'trabajado_segundos'  => $a->tiempoTrabajado(),
+                'pausas_segundos'     => $a->tiempoPausasSegundos(hasta: $hasta),
+                'trabajado_segundos'  => $a->tiempoTrabajado($hasta),
                 'en_pausa'            => $enPausa,
                 'turno_terminado'     => $turnoTerminado,
+                'sin_conexion'        => $sinConexion,
                 'sin_registro'        => false,
                 'estado'              => $estado,
             ];

@@ -93,11 +93,12 @@
                         @php
                             $fecha     = $dia->toDateString();
                             $delMes    = $dia->month === $inicioMes->month;
-                            $jornada   = $delMes ? $porDia->get($fecha)?->first() : null;
-                            $finDeSem  = $dia->isWeekend();
-                            $esHoy     = $fecha === $hoy;
-                            $abierta   = $jornada && !$jornada->hora_salida;
-                            $corregida = $jornada && $jornada->motivo_correccion;
+                            // Normalmente hay una jornada por día, pero datos viejos
+                            // (antes del candado contra doble clic) pueden tener dos.
+                            $jornadasDia = $delMes ? ($porDia->get($fecha) ?? collect()) : collect();
+                            $finDeSem    = $dia->isWeekend();
+                            $esHoy       = $fecha === $hoy;
+                            $corregida   = $jornadasDia->first(fn ($j) => $j->motivo_correccion);
                         @endphp
 
                         <div class="min-h-[4.5rem] sm:min-h-[6.5rem] border-b border-r border-[#EAE4D8] dark:border-gray-700/70 p-1 sm:p-2
@@ -110,11 +111,13 @@
                                     {{ $dia->day }}
                                 </span>
                                 @if($corregida)
-                                    <ion-icon name="create-outline" class="text-amber-500 text-sm" title="Corregida: {{ $jornada->motivo_correccion }}"></ion-icon>
+                                    <ion-icon name="create-outline" class="text-amber-500 text-sm" title="Corregida: {{ $corregida->motivo_correccion }}"></ion-icon>
                                 @endif
                             </div>
 
-                            @if($jornada)
+                            <div class="space-y-1">
+                            @foreach($jornadasDia as $jornada)
+                                @php $abierta = !$jornada->hora_salida; @endphp
                                 <button type="button"
                                         onclick="(window.abrirEditarJornada||function(){})(
                                             {{ $jornada->id }},
@@ -141,7 +144,8 @@
                                         </span>
                                     @endif
                                 </button>
-                            @endif
+                            @endforeach
+                            </div>
                         </div>
                     @endfor
                 </div>

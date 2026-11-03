@@ -211,6 +211,8 @@ window.cerrarToast = function(elemento) {
     .badge-activo        { background:rgba(34,197,94,0.15);   color:#16a34a; border:1px solid rgba(34,197,94,0.3); }
     .badge-descanso      { background:rgba(245,158,11,0.15);  color:#d97706; border:1px solid rgba(245,158,11,0.3); }
     .badge-terminado     { background:rgba(239,68,68,0.15);   color:#dc2626; border:1px solid rgba(239,68,68,0.3); }
+    .badge-sin-conexion  { background:rgba(139,92,246,0.15);  color:#7c3aed; border:1px solid rgba(139,92,246,0.3); }
+    .dark .badge-sin-conexion  { background:rgba(139,92,246,0.18); color:#c4b5fd; border-color:rgba(139,92,246,0.35); }
 
     .dark .badge-sin-registrar { background:rgba(100,116,139,0.2);  color:#94a3b8; border-color:rgba(100,116,139,0.35); }
     .dark .badge-activo        { background:rgba(34,197,94,0.15);   color:#4ade80; border-color:rgba(34,197,94,0.35); }
