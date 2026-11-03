@@ -42,6 +42,12 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => ['required', 'confirmed', Password::defaults()],
+        ], [
+            // El correo se genera del nombre: si choca, lo más probable es
+            // que ya exista otro becario con el mismo nombre.
+            'email.unique'   => "Ya existe un usuario con el correo {$request->email}. Agrega el segundo apellido u otra inicial al nombre.",
+            'email.required' => 'Escribe el nombre del becario para generar su correo.',
+            'email.email'    => 'El correo generado no es válido. Revisa que el nombre solo tenga letras y espacios.',
         ]);
 
         User::create([

@@ -43,9 +43,10 @@
                     <select name="mes"
                             class="w-full bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/40 focus:outline-none">
                         <option value="">Todos</option>
+                        {{-- $mes = "YYYY-MM" → "septiembre 2026" --}}
                         @foreach($meses as $mes)
-                            <option value="{{ $mes->numero_mes }}" @selected(request('mes')==$mes->numero_mes)>
-                                {{ \Carbon\Carbon::create()->month($mes->numero_mes)->translatedFormat('F') }}
+                            <option value="{{ $mes }}" @selected(request('mes') === $mes)>
+                                {{ \Carbon\Carbon::createFromFormat('Y-m-d', $mes . '-01')->translatedFormat('F Y') }}
                             </option>
                         @endforeach
                     </select>
@@ -58,10 +59,11 @@
                     </label>
                     <select name="order"
                             class="w-full bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/40 focus:outline-none">
+                        {{-- "Más reciente" es el orden por defecto del controlador --}}
+                        <option value="recent" @selected(request('order', 'recent')=='recent')>Más reciente</option>
+                        <option value="oldest" @selected(request('order')=='oldest')>Más antiguo</option>
                         <option value="az" @selected(request('order')=='az')>A-Z</option>
                         <option value="za" @selected(request('order')=='za')>Z-A</option>
-                        <option value="recent" @selected(request('order')=='recent')>Más reciente</option>
-                        <option value="oldest" @selected(request('order')=='oldest')>Más antiguo</option>
                     </select>
                 </div>
 

@@ -33,7 +33,7 @@
     {{-- Contenedor dinámico para evitar recargas completas al paginar --}}
     <div id="historial-contenedor" class="space-y-4">
         <x-history.stats
-            :asistencias="$asistencias"
+            :resumen="$stats"
         />
 
         <x-history.search

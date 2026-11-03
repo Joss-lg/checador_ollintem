@@ -102,6 +102,8 @@ class HomeController extends Controller
             'email' => 'required|email|unique:users,email,' . $id,
             'role' => 'required|in:admin,becario',
             'password' => ['nullable', 'confirmed', Password::defaults()],
+        ], [
+            'email.unique' => "Ya existe otro usuario con el correo {$request->email}.",
         ]);
 
         return DB::transaction(function () use ($request, $id) {

@@ -170,9 +170,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // EVENTOS DE LOS MODALES (ACCIONES)
     // ==========================================
 
+    // Evita el doble envío: al mandar cualquier formulario se desactivan
+    // sus botones, para que un doble clic no cree registros duplicados.
+    document.querySelectorAll('form').forEach((form) => {
+        form.addEventListener('submit', (e) => {
+            if (form.dataset.enviando === '1') {
+                e.preventDefault();
+                return;
+            }
+            form.dataset.enviando = '1';
+            form.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+
+            // Enviar un formulario (pausa, salida, inactividad, cerrar sesión)
+            // es una navegación intencional: no debe salir el aviso de
+            // "¿Seguro que quieres salir?" del beforeunload.
+            window.esSalidaManual = true;
+        });
+    });
+
     const btnConfirmarPausa = document.getElementById('confirmarFinalizarPausa');
     if (btnConfirmarPausa) {
         btnConfirmarPausa.addEventListener('click', () => {
+            btnConfirmarPausa.disabled = true;
             document.getElementById('formFinalizarPausa')?.submit();
         });
     }
@@ -180,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnConfirmarSalida = document.getElementById('confirmarSalida');
     if (btnConfirmarSalida) {
         btnConfirmarSalida.addEventListener('click', () => {
+            btnConfirmarSalida.disabled = true;
             window.esSalidaManual = true;
             document.getElementById('formSalida')?.submit();
         });
@@ -357,7 +377,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const cfg = window.checadorConfig || {};
     if (cfg.estado !== 'trabajando' && cfg.estado !== 'pausado') return;
 
-    const INTERVALO_MS = 30 * 1000;
+    const INTERVALO_MS        = 30 * 1000;
+    // Con la pestaña oculta se sigue consultando, pero más espaciado: así la
+    // sesión (SESSION_LIFETIME) no expira mientras la jornada está abierta y
+    // el becario no se topa con "Page Expired" al registrar su salida.
+    const INTERVALO_OCULTO_MS = 5 * 60 * 1000;
+
+    // Recarga sin disparar el aviso de "¿Seguro que quieres salir?"
+    function recargar() {
+        window.esSalidaManual = true;
+        window.location.reload();
+    }
 
     function getCsrf() {
         const m = document.querySelector('meta[name="csrf-token"]');
@@ -373,7 +403,9 @@ document.addEventListener('DOMContentLoaded', function () {
             },
         })
         .then(function(r) {
-            if (r.status === 419) { window.location.reload(); return null; }
+            // 401/419: la sesión ya expiró. Se recarga para que el becario
+            // vuelva a iniciar sesión antes de intentar registrar algo.
+            if (r.status === 401 || r.status === 419) { recargar(); return null; }
             if (!r.ok) return null;
             return r.json();
         })
@@ -389,23 +421,25 @@ document.addEventListener('DOMContentLoaded', function () {
                         'Tu pausa superó 1 hora. La jornada fue cerrada automáticamente.'
                     );
                 }
-                setTimeout(function() { window.location.reload(); }, 2500);
+                setTimeout(recargar, 2500);
                 return;
             }
 
             if (data.terminado) {
                 // Admin forzó la salida
-                window.location.reload();
+                recargar();
             }
         })
         .catch(function() { /* error de red — reintentar en el siguiente ciclo */ });
     }
 
-    // Pausar el polling cuando el tab está oculto (ahorra batería en móvil)
+    // Con el tab oculto se espacia el polling (ahorra batería en móvil)
+    // pero no se detiene, para mantener viva la sesión.
     let intervalo = setInterval(verificar, INTERVALO_MS);
     document.addEventListener('visibilitychange', function() {
+        clearInterval(intervalo);
         if (document.hidden) {
-            clearInterval(intervalo);
+            intervalo = setInterval(verificar, INTERVALO_OCULTO_MS);
         } else {
             verificar(); // revisar inmediatamente al volver
             intervalo = setInterval(verificar, INTERVALO_MS);

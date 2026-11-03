@@ -7,6 +7,7 @@ use App\Models\Pausa;
 use App\Support\EstadoTurnoPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class AsistenciaController extends Controller
@@ -98,32 +99,54 @@ class AsistenciaController extends Controller
             );
         }
 
-        $hoy = now()->toDateString();
+        return $this->conBloqueo(function () use ($horaActual) {
+            $hoy = now()->toDateString();
 
-        $jornadaHoy = Asistencia::where('user_id', Auth::id())
-            ->where('fecha', $hoy)
-            ->first();
+            $jornadaHoy = Asistencia::where('user_id', Auth::id())
+                ->where('fecha', $hoy)
+                ->first();
 
-        if ($jornadaHoy) {
-            return back()->with('error', $jornadaHoy->hora_salida
-                ? 'Ya registraste tu jornada de hoy. Si necesitas reabrirla, contacta al administrador.'
-                : 'Ya cuentas con un registro de entrada activo para el día de hoy.');
+            if ($jornadaHoy) {
+                return back()->with('error', $jornadaHoy->hora_salida
+                    ? 'Ya registraste tu jornada de hoy. Si necesitas reabrirla, contacta al administrador.'
+                    : 'Ya cuentas con un registro de entrada activo para el día de hoy.');
+            }
+
+            // Jornadas olvidadas de días anteriores: se cierran a la hora fin
+            // oficial, junto con sus pausas abiertas.
+            Asistencia::where('user_id', Auth::id())
+                ->whereNull('hora_salida')
+                ->get()
+                ->each->cerrar(self::horaFin());
+
+            Asistencia::create([
+                'user_id'      => Auth::id(),
+                'hora_entrada' => $horaActual->format('H:i:s'),
+                'fecha'        => $hoy,
+            ]);
+
+            return back()->with('success', 'Entrada registrada correctamente.');
+        });
+    }
+
+    /**
+     * Ejecuta una acción del becario con un candado por usuario, para que un
+     * doble clic (dos peticiones casi simultáneas) no cree jornadas o pausas
+     * duplicadas: la segunda petición se rechaza mientras la primera corre.
+     */
+    private function conBloqueo(callable $accion)
+    {
+        $candado = Cache::lock('asistencia:' . Auth::id(), 10);
+
+        if (! $candado->get()) {
+            return back()->with('error', 'Tu registro anterior todavía se está procesando. Intenta de nuevo.');
         }
 
-        // Jornadas olvidadas de días anteriores: se cierran a la hora fin
-        // oficial, junto con sus pausas abiertas.
-        Asistencia::where('user_id', Auth::id())
-            ->whereNull('hora_salida')
-            ->get()
-            ->each->cerrar(self::horaFin());
-
-        Asistencia::create([
-            'user_id'      => Auth::id(),
-            'hora_entrada' => $horaActual->format('H:i:s'),
-            'fecha'        => $hoy,
-        ]);
-
-        return back()->with('success', 'Entrada registrada correctamente.');
+        try {
+            return $accion();
+        } finally {
+            $candado->release();
+        }
     }
 
     public function registrarSalida()
@@ -210,35 +233,37 @@ class AsistenciaController extends Controller
             'motivo' => ['required', 'string', 'in:Almuerzo,Personal'],
         ]);
 
-        // Solo la jornada abierta de HOY: no se abren pausas sobre jornadas
-        // olvidadas de días anteriores.
-        $asistencia = Asistencia::where('user_id', Auth::id())
-            ->whereNull('hora_salida')
-            ->where('fecha', now()->toDateString())
-            ->first();
+        return $this->conBloqueo(function () use ($request) {
+            // Solo la jornada abierta de HOY: no se abren pausas sobre jornadas
+            // olvidadas de días anteriores.
+            $asistencia = Asistencia::where('user_id', Auth::id())
+                ->whereNull('hora_salida')
+                ->where('fecha', now()->toDateString())
+                ->first();
 
-        if (!$asistencia) {
-            return back()->with('error', 'No existe una jornada activa para iniciar pausa.');
-        }
+            if (!$asistencia) {
+                return back()->with('error', 'No existe una jornada activa para iniciar pausa.');
+            }
 
-        $pausaActiva = Pausa::where('user_id', Auth::id())
-            ->where('asistencia_id', $asistencia->id)
-            ->whereNull('fin_pausa')
-            ->exists();
+            $pausaActiva = Pausa::where('user_id', Auth::id())
+                ->where('asistencia_id', $asistencia->id)
+                ->whereNull('fin_pausa')
+                ->exists();
 
-        if ($pausaActiva) {
-            return back()->with('error', 'Ya cuentas con una pausa activa.');
-        }
+            if ($pausaActiva) {
+                return back()->with('error', 'Ya cuentas con una pausa activa.');
+            }
 
-        Pausa::create([
-            'user_id'       => Auth::id(),
-            'asistencia_id' => $asistencia->id,
-            'inicio_pausa'  => now()->format('H:i:s'),
-            'motivo'        => $request->motivo,
-            'fecha'         => now()->toDateString(),
-        ]);
+            Pausa::create([
+                'user_id'       => Auth::id(),
+                'asistencia_id' => $asistencia->id,
+                'inicio_pausa'  => now()->format('H:i:s'),
+                'motivo'        => $request->motivo,
+                'fecha'         => now()->toDateString(),
+            ]);
 
-        return back()->with('success', 'Pausa iniciada correctamente.');
+            return back()->with('success', 'Pausa iniciada correctamente.');
+        });
     }
 
     public function finalizarPausa()

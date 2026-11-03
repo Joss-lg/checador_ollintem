@@ -76,14 +76,11 @@ class ExcelController extends Controller
         $mes = $request->input('mes');
         $semana = $request->input('semana');
 
+        // Mismos filtros y orden que la pantalla del historial
         $asistencias = Asistencia::query()
             ->with(['user', 'pausas'])
-            ->join('users', 'users.id', '=', 'asistencias.user_id')
-            ->select('asistencias.*')
-            ->orderBy('users.name')
-            ->when($buscar, fn($q) => $q->where('users.name', 'like', "%{$buscar}%"))
-            ->filtrarPorMes($mes)
-            ->filtrarPorSemana($semana)
+            ->filtrosHistorial($request->only(['search', 'semana', 'mes']))
+            ->ordenar($request->input('order'))
             ->get();
 
         // Obtener resumen general

@@ -103,6 +103,14 @@ class Asistencia extends Model
 
     public function tiempoPausasSegundos()
     {
+        // Solo cuenta la parte de cada pausa que cae dentro de la jornada
+        // [entrada, salida]. Así, si el admin corrige la salida a una hora
+        // anterior a una pausa, esa pausa ya no se resta del tiempo trabajado.
+        $inicioJornada = $this->hora_entrada
+            ? Carbon::parse($this->fecha . ' ' . $this->hora_entrada)
+            : null;
+        $finJornada = $this->finReferencia();
+
         $segundos = 0;
         foreach ($this->pausas as $pausa) {
             if (!$pausa->inicio_pausa) {
@@ -111,7 +119,15 @@ class Asistencia extends Model
             $inicio = Carbon::parse($this->fecha . ' ' . $pausa->inicio_pausa);
             $fin = $pausa->fin_pausa
                 ? Carbon::parse($this->fecha . ' ' . $pausa->fin_pausa)
-                : $this->finReferencia();
+                : $finJornada;
+
+            if ($inicioJornada && $inicio->lt($inicioJornada)) {
+                $inicio = $inicioJornada->copy();
+            }
+            if ($fin->gt($finJornada)) {
+                $fin = $finJornada->copy();
+            }
+
             $segundos += max(0, (int) $inicio->diffInSeconds($fin, false));
         }
         return $segundos;
@@ -156,7 +172,8 @@ class Asistencia extends Model
     }
 
     /**
-     * Filtra por número de mes (1-12) de `fecha`.
+     * Filtra por mes de `fecha`. Acepta "YYYY-MM" (mes de un año concreto,
+     * lo que manda el selector) o solo el número de mes 1-12 (links viejos).
      */
     public function scopeFiltrarPorMes($query, $mes)
     {
@@ -164,7 +181,12 @@ class Asistencia extends Model
             return $query;
         }
 
-        return $query->whereMonth('fecha', $mes);
+        if (preg_match('/^(\d{4})-(\d{2})$/', $mes, $m)) {
+            return $query->whereYear('fecha', (int) $m[1])
+                ->whereMonth('fecha', (int) $m[2]);
+        }
+
+        return $query->whereMonth('fecha', (int) $mes);
     }
 
     /**
@@ -183,5 +205,38 @@ class Asistencia extends Model
             $q->where('name', 'like', "%{$buscar}%")
               ->orWhere('email', 'like', "%{$buscar}%");
         });
+    }
+
+    /**
+     * Filtros del historial (búsqueda, semana y mes) en un solo lugar, para
+     * que la pantalla, el PDF y el Excel generales devuelvan lo mismo.
+     */
+    public function scopeFiltrosHistorial($query, array $filtros)
+    {
+        return $query
+            ->buscarBecario($filtros['search'] ?? null)
+            ->filtrarPorSemana($filtros['semana'] ?? null)
+            ->filtrarPorMes($filtros['mes'] ?? null);
+    }
+
+    /**
+     * Orden del historial: az | za | oldest | recent (por defecto).
+     */
+    public function scopeOrdenar($query, ?string $orden)
+    {
+        switch ($orden) {
+            case 'az':
+            case 'za':
+                return $query->join('users', 'users.id', '=', 'asistencias.user_id')
+                    ->select('asistencias.*')
+                    ->orderBy('users.name', $orden === 'az' ? 'asc' : 'desc')
+                    ->orderBy('asistencias.fecha', 'desc');
+            case 'oldest':
+                return $query->orderBy('asistencias.fecha', 'asc')
+                    ->orderBy('asistencias.hora_entrada', 'asc');
+            default:
+                return $query->orderBy('asistencias.fecha', 'desc')
+                    ->orderBy('asistencias.hora_entrada', 'desc');
+        }
     }
 }

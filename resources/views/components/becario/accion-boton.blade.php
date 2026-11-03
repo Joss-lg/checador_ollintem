@@ -61,6 +61,16 @@
 
     $p = $paletas[$color] ?? $paletas['blue'];
 
+    // Tailwind solo genera clases que aparecen completas en el código:
+    // una clase armada con la variable no se detecta, así que se mapean aquí.
+    $rotaciones = [
+        '-rotate-3' => 'group-hover:-rotate-3',
+        'rotate-3'  => 'group-hover:rotate-3',
+        '-rotate-6' => 'group-hover:-rotate-6',
+        'rotate-6'  => 'group-hover:rotate-6',
+    ];
+    $hoverRotate = $rotaciones[$iconRotate] ?? '';
+
     $baseClasses = "group relative isolate w-full text-left overflow-hidden rounded-2xl border p-4 sm:p-5 flex items-center gap-4
                     bg-white dark:bg-slate-900/60 {$p['border']}
                     transition-all duration-300 ease-out
@@ -88,7 +98,7 @@
 
     <span class="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-xl text-white
                {{ $p['iconBg'] }} {{ $p['iconShadow'] }}
-               transition-transform duration-300 group-hover:scale-110 group-hover:{{ $iconRotate }}">
+               transition-transform duration-300 group-hover:scale-110 {{ $hoverRotate }}">
         <ion-icon name="{{ $icon }}"></ion-icon>
     </span>
 

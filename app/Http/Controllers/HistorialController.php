@@ -15,40 +15,36 @@ class HistorialController extends Controller
     {
         $this->authorizeAdmin();
 
+        $filtros = $request->only(['search', 'semana', 'mes']);
+
         $query = Asistencia::with(['user', 'pausas'])
-            ->buscarBecario($request->input('search'))
-            ->filtrarPorSemana($request->input('semana'))
-            ->filtrarPorMes($request->input('mes'));
+            ->filtrosHistorial($filtros)
+            ->ordenar($request->input('order'));
 
-        // Ordenamiento dinámico
-        switch ($request->get('order')) {
-            case 'az':
-                $query->join('users', 'users.id', '=', 'asistencias.user_id')
-                      ->orderBy('users.name', 'asc')
-                      ->select('asistencias.*');
-                break;
-            case 'za':
-                $query->join('users', 'users.id', '=', 'asistencias.user_id')
-                      ->orderBy('users.name', 'desc')
-                      ->select('asistencias.*');
-                break;
-            case 'oldest':
-                $query->orderBy('fecha', 'asc');
-                break;
-            default:
-                $query->orderBy('fecha', 'desc');
-                break;
-        }
+        // Estadísticas sobre TODOS los resultados filtrados, no solo sobre
+        // los 15 de la página actual.
+        $base  = Asistencia::query()->filtrosHistorial($filtros);
+        $stats = [
+            'registros'   => (clone $base)->count(),
+            'becarios'    => (clone $base)->distinct()->count('user_id'),
+            'finalizados' => (clone $base)->whereNotNull('hora_salida')->count(),
+            'en_curso'    => (clone $base)->whereNull('hora_salida')->count(),
+        ];
 
-        // Obtener meses disponibles para el selector de la vista
-        $meses = Asistencia::selectRaw('MONTH(fecha) as numero_mes')
+        // Meses disponibles para el selector, como "YYYY-MM" (más reciente
+        // primero) para no mezclar el mismo mes de años distintos. Se arma en
+        // PHP en lugar de MONTH() para no depender de funciones de MySQL.
+        $meses = Asistencia::query()
             ->distinct()
-            ->orderBy('numero_mes')
-            ->get();
+            ->pluck('fecha')
+            ->map(fn ($fecha) => substr($fecha, 0, 7))
+            ->unique()
+            ->sortDesc()
+            ->values();
 
         $asistencias = $query->paginate(15)->withQueryString();
 
-        return view('admin.historial.index', compact('asistencias', 'meses'));
+        return view('admin.historial.index', compact('asistencias', 'meses', 'stats'));
     }
 
     public function show(Asistencia $asistencia)

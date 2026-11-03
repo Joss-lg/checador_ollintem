@@ -69,7 +69,13 @@
                                     @ollintem.com.mx
                                 </span>
                             </div>
-                            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-600">Modifica el usuario solo si es estrictamente necesario.</p>
+                            {{-- El correo es el usuario de inicio de sesión: solo cambia si el admin lo pide --}}
+                            <label class="mt-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                                <input type="checkbox" id="edit_cambiar_correo" onchange="actualizarCorreoAuto()"
+                                       class="rounded border-[#EAE4D8] dark:border-white/20 text-blue-600 focus:ring-blue-500/40">
+                                Cambiar también el correo de acceso con el nuevo nombre
+                            </label>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-600">Si lo cambias, el usuario deberá iniciar sesión con el correo nuevo.</p>
                             <input type="hidden" name="email" id="full_email_hidden">
                         </div>
                     </div>
@@ -168,6 +174,10 @@ function prepararEdicion(id, name, role, email) {
     let prefix = email.split('@')[0];
     document.getElementById('edit_email_prefix').value = prefix;
     document.getElementById('full_email_hidden').value = email;
+
+    // Se guarda el correo original para restaurarlo si no se marca el cambio
+    document.getElementById('full_email_hidden').dataset.original = email;
+    document.getElementById('edit_cambiar_correo').checked = false;
     
     // Abrir el modal usando nuestra nueva función global
     if (typeof window.openModal === 'function') {
@@ -176,11 +186,21 @@ function prepararEdicion(id, name, role, email) {
 }
 
 function actualizarCorreoAuto() {
-    let nuevoNombre = document.getElementById('edit_name').value;
-    let nuevoPrefix = nuevoNombre.toLowerCase().replace(/\s+/g, '.');
-    
+    const hidden   = document.getElementById('full_email_hidden');
+    const original = hidden.dataset.original || '';
+
+    // Sin la casilla marcada se conserva el correo actual: renombrar a un
+    // usuario no debe cambiarle su usuario de inicio de sesión sin avisar.
+    if (!document.getElementById('edit_cambiar_correo').checked) {
+        document.getElementById('edit_email_prefix').value = original.split('@')[0];
+        hidden.value = original;
+        return;
+    }
+
+    // prefijoCorreo() vive en registrar-becario.blade.php (misma página)
+    const nuevoPrefix = prefijoCorreo(document.getElementById('edit_name').value);
     document.getElementById('edit_email_prefix').value = nuevoPrefix;
-    document.getElementById('full_email_hidden').value = nuevoPrefix + "@ollintem.com.mx";
+    hidden.value = nuevoPrefix ? nuevoPrefix + "@ollintem.com.mx" : original;
 }
 
 // ---- LÓGICA DE VALIDACIÓN PARA EL MODAL DE EDICIÓN ----

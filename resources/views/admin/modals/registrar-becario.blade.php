@@ -74,7 +74,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nombre Completo</label>
                             <input type="text" name="name" id="nombre_becario"
                                    class="w-full px-4 py-2.5 bg-white dark:bg-white/[0.04] border border-[#EAE4D8] dark:border-white/10 rounded-lg text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/40 focus:border-blue-400 dark:focus:border-blue-500/60 transition-all"
-                                   onkeyup="generarEmailAuto()" placeholder="Ej. Juan Pérez" required>
+                                   oninput="generarEmailAuto()" placeholder="Ej. Juan Pérez" required>
                         </div>
                         
                         <div>
@@ -170,11 +170,23 @@ document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') cerrarModalBecario();
 });
 
+// Convierte un nombre en un prefijo de correo válido:
+// "  José  Núñez " → "jose.nunez" (sin acentos, ñ → n, sin espacios ni
+// símbolos al inicio/final). También lo usa el modal de editar usuario.
+function prefijoCorreo(nombre) {
+    return nombre
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s.]/g, '')
+        .replace(/[\s.]+/g, '.')
+        .replace(/^\.+|\.+$/g, '');
+}
+
 function generarEmailAuto() {
-    let nombre = document.getElementById('nombre_becario').value;
-    let emailBase = nombre.toLowerCase().replace(/\s+/g, '.');
-    document.getElementById('email_prefix').value = emailBase;
-    document.getElementById('email_corporativo').value = emailBase + "@ollintem.com.mx";
+    const prefijo = prefijoCorreo(document.getElementById('nombre_becario').value);
+    document.getElementById('email_prefix').value = prefijo;
+    document.getElementById('email_corporativo').value = prefijo ? prefijo + "@ollintem.com.mx" : '';
 }
 
 // Funciones para la alerta dinámica

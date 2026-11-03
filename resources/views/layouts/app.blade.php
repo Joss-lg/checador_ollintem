@@ -116,20 +116,23 @@ class="bg-[#F9F6EE] dark:bg-slate-950 text-gray-800 dark:text-gray-300 [font-fam
 <!-- Lógica de intercepción de sesiones de Laravel -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        {{-- @json(e(...)): escapa el HTML (mostrarToast usa innerHTML) y genera
+             una cadena JS válida aunque el mensaje tenga comillas o saltos de línea --}}
         @if(session('success'))
-            mostrarToast('success', '¡Operación Exitosa!', '{{ session('success') }}');
+            mostrarToast('success', '¡Operación Exitosa!', @json(e(session('success'))));
         @endif
 
         @if(session('error'))
-            mostrarToast('error', 'Error en el proceso', '{{ session('error') }}');
+            mostrarToast('error', 'Error en el proceso', @json(e(session('error'))));
         @endif
 
         @if(session('warning'))
-            mostrarToast('warning', 'Atención', '{{ session('warning') }}');
+            mostrarToast('warning', 'Atención', @json(e(session('warning'))));
         @endif
-        
+
+        {{-- Se muestra el primer error real de validación en vez de un mensaje genérico --}}
         @if($errors->any())
-            mostrarToast('error', 'Error de Validación', 'Por favor, revisa los datos ingresados e inténtalo de nuevo.');
+            mostrarToast('error', 'Error de Validación', @json(e($errors->first())));
         @endif
     });
 </script>
